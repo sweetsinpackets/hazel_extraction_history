@@ -2,6 +2,9 @@
 'use strict';
 
 var Block = require("bs-platform/lib/js/block.js");
+var Pervasives = require("bs-platform/lib/js/pervasives.js");
+
+Pervasives.print_string("AAAAAA");
 
 var example_block = /* Block */[
   /* :: */[
@@ -30,4 +33,4 @@ var example_block = /* Block */[
 ];
 
 exports.example_block = example_block;
-/* No side effect */
+/*  Not a pure module */

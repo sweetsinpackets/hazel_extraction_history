@@ -16,4 +16,4 @@ let example_block =
   );
 
 
-
+print_string("AAAAAA");
