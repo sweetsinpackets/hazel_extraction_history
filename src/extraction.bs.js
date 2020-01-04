@@ -2,11 +2,46 @@
 'use strict';
 
 var Block = require("bs-platform/lib/js/block.js");
-var Pervasives = require("bs-platform/lib/js/pervasives.js");
 
-Pervasives.print_string("AAAAAA");
+var example_123 = /* Block */[
+  /* [] */0,
+  /* NumLit */Block.__(2, [
+      /* NotInHole */0,
+      123
+    ])
+];
 
-var example_block = /* Block */[
+function numlit_handler(errstatus, value) {
+  if (errstatus) {
+    return ;
+  } else {
+    return String(value);
+  }
+}
+
+function type_handler(t) {
+  if (t.tag === /* NumLit */2) {
+    return numlit_handler(t[0], t[1]);
+  }
+  
+}
+
+function block_handler(block) {
+  return type_handler(block[1]);
+}
+
+function extraction_caller(block) {
+  var match = block_handler(block);
+  if (match !== undefined) {
+    return match;
+  } else {
+    return "It's not completed!";
+  }
+}
+
+console.log(extraction_caller(example_123));
+
+var example_let = /* Block */[
   /* :: */[
     /* LetLine */Block.__(1, [
         /* Var */Block.__(2, [
@@ -32,5 +67,10 @@ var example_block = /* Block */[
     ])
 ];
 
-exports.example_block = example_block;
+exports.example_let = example_let;
+exports.example_123 = example_123;
+exports.numlit_handler = numlit_handler;
+exports.type_handler = type_handler;
+exports.block_handler = block_handler;
+exports.extraction_caller = extraction_caller;
 /*  Not a pure module */
