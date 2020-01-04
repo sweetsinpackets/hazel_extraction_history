@@ -2,14 +2,24 @@
 'use strict';
 
 var Block = require("bs-platform/lib/js/block.js");
+var Pervasives = require("bs-platform/lib/js/pervasives.js");
 
-var example_123 = /* Block */[
+var example_listnil = /* Block */[
   /* [] */0,
-  /* NumLit */Block.__(2, [
-      /* NotInHole */0,
-      123
-    ])
+  /* ListNil */Block.__(4, [/* NotInHole */0])
 ];
+
+function emptyhole_handler(param) {
+  return ;
+}
+
+function var_handler(errstatus, varerrstatus, value) {
+  if (errstatus || varerrstatus) {
+    return ;
+  } else {
+    return value;
+  }
+}
 
 function numlit_handler(errstatus, value) {
   if (errstatus) {
@@ -19,11 +29,41 @@ function numlit_handler(errstatus, value) {
   }
 }
 
-function type_handler(t) {
-  if (t.tag === /* NumLit */2) {
-    return numlit_handler(t[0], t[1]);
+function boollit_handler(errstatus, value) {
+  if (errstatus) {
+    return ;
+  } else {
+    return Pervasives.string_of_bool(value);
   }
-  
+}
+
+function listnil_handler(errstatus) {
+  if (errstatus) {
+    return ;
+  } else {
+    return "[]";
+  }
+}
+
+function type_handler(t) {
+  switch (t.tag | 0) {
+    case /* EmptyHole */0 :
+        return ;
+    case /* Var */1 :
+        return var_handler(t[0], t[1], t[2]);
+    case /* NumLit */2 :
+        return numlit_handler(t[0], t[1]);
+    case /* BoolLit */3 :
+        return boollit_handler(t[0], t[1]);
+    case /* ListNil */4 :
+        if (t[0]) {
+          return ;
+        } else {
+          return "[]";
+        }
+    default:
+      return ;
+  }
 }
 
 function block_handler(block) {
@@ -39,7 +79,7 @@ function extraction_caller(block) {
   }
 }
 
-console.log(extraction_caller(example_123));
+console.log(extraction_caller(example_listnil));
 
 var example_let = /* Block */[
   /* :: */[
@@ -67,9 +107,37 @@ var example_let = /* Block */[
     ])
 ];
 
+var example_123 = /* Block */[
+  /* [] */0,
+  /* NumLit */Block.__(2, [
+      /* NotInHole */0,
+      123
+    ])
+];
+
+var example_true = /* Block */[
+  /* [] */0,
+  /* BoolLit */Block.__(3, [
+      /* NotInHole */0,
+      true
+    ])
+];
+
+var example_emptyhole = /* Block */[
+  /* [] */0,
+  /* EmptyHole */Block.__(0, [45])
+];
+
 exports.example_let = example_let;
 exports.example_123 = example_123;
+exports.example_true = example_true;
+exports.example_emptyhole = example_emptyhole;
+exports.example_listnil = example_listnil;
+exports.emptyhole_handler = emptyhole_handler;
+exports.var_handler = var_handler;
 exports.numlit_handler = numlit_handler;
+exports.boollit_handler = boollit_handler;
+exports.listnil_handler = listnil_handler;
 exports.type_handler = type_handler;
 exports.block_handler = block_handler;
 exports.extraction_caller = extraction_caller;
