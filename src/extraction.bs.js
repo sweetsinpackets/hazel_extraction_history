@@ -4,10 +4,49 @@
 var Block = require("bs-platform/lib/js/block.js");
 var Pervasives = require("bs-platform/lib/js/pervasives.js");
 
-var example_listnil = /* Block */[
-  /* [] */0,
-  /* ListNil */Block.__(4, [/* NotInHole */0])
-];
+function uhtyp_translater(t) {
+  if (typeof t === "number") {
+    switch (t) {
+      case /* Hole */0 :
+          return ;
+      case /* Unit */1 :
+          return "()";
+      case /* Num */2 :
+          return "int";
+      case /* Bool */3 :
+          return "bool";
+      
+    }
+  } else {
+    switch (t.tag | 0) {
+      case /* Parenthesized */0 :
+          var match = uhtyp_translater(t[0]);
+          if (match !== undefined) {
+            return "(" + (match + ")");
+          } else {
+            return ;
+          }
+      case /* List */1 :
+          var match$1 = uhtyp_translater(t[0]);
+          if (match$1 !== undefined) {
+            return match$1 + " list";
+          } else {
+            return ;
+          }
+      case /* OpSeq */2 :
+          return ;
+      
+    }
+  }
+}
+
+var uhtyp_example = /* Parenthesized */Block.__(0, [/* List */Block.__(1, [/* Num */2])]);
+
+var match = uhtyp_translater(uhtyp_example);
+
+if (match !== undefined) {
+  console.log(match);
+}
 
 function emptyhole_handler(param) {
   return ;
@@ -79,8 +118,6 @@ function extraction_caller(block) {
   }
 }
 
-console.log(extraction_caller(example_listnil));
-
 var example_let = /* Block */[
   /* :: */[
     /* LetLine */Block.__(1, [
@@ -128,11 +165,18 @@ var example_emptyhole = /* Block */[
   /* EmptyHole */Block.__(0, [45])
 ];
 
+var example_listnil = /* Block */[
+  /* [] */0,
+  /* ListNil */Block.__(4, [/* NotInHole */0])
+];
+
 exports.example_let = example_let;
 exports.example_123 = example_123;
 exports.example_true = example_true;
 exports.example_emptyhole = example_emptyhole;
 exports.example_listnil = example_listnil;
+exports.uhtyp_translater = uhtyp_translater;
+exports.uhtyp_example = uhtyp_example;
 exports.emptyhole_handler = emptyhole_handler;
 exports.var_handler = var_handler;
 exports.numlit_handler = numlit_handler;
@@ -141,4 +185,4 @@ exports.listnil_handler = listnil_handler;
 exports.type_handler = type_handler;
 exports.block_handler = block_handler;
 exports.extraction_caller = extraction_caller;
-/*  Not a pure module */
+/* match Not a pure module */

@@ -42,6 +42,49 @@ let example_listnil = Block(
 //      then line recursive
 //===============================
 
+// Helper Functions
+
+let uhtyp_op_translater = (~op : UHTyp.op) : string =>
+  switch(op) {
+    | Arrow => " -> "
+    | Prod => " * " //int*int in ocaml
+    | Sum => " | "
+  }
+
+
+// translate type constructor into ocaml type
+//opseq is when using bi-argument operations like plus,
+//skel.t use BinOp to indicate the operation(op) and two placeholder
+//  in UHTyp, it's one the type, like Num -> Num
+//  It's like skel.t will always receive NotInHole, so ignore it
+//opseq is the operation, ExpOpExp is to do calculation,
+//  SeqOpExp is to do sequence operation, like 1+2+3
+let rec uhtyp_translater = (~t : UHTyp.t) : option(string) =>
+  switch(t) {
+    | Num => Some("int")
+    | Bool => Some("bool")
+    | Unit => Some("()") //written as (), actually is unit
+    | List(a) => switch(uhtyp_translater(a)){
+      | None => None
+      | Some(s) => Some(s ++ " list")
+    }
+    | Parenthesized(a) => switch(uhtyp_translater(a)) {
+      | None => None
+      | Some(s) => Some("(" ++ s ++ ")")
+    }
+    | Hole => None
+    | OpSeq(skel_t, opseq) => switch()
+  };
+
+
+let uhtyp_example : UHTyp.t= Parenthesized(List(Num));
+
+switch(uhtyp_translater(~t=uhtyp_example)){
+  | None => ()
+  | Some(s) => print_endline(s)
+};
+
+
 // OUTER NODES
 
 // it means there's empty hole, so it will fail
@@ -102,4 +145,4 @@ let extraction_caller=(~block : block) : string =>
     | Some(s) => s
   };
 
-print_endline(extraction_caller(~block=example_listnil));
+//print_endline(extraction_caller(~block=example_listnil));
