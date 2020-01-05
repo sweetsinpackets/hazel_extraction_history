@@ -4,6 +4,18 @@
 var Block = require("bs-platform/lib/js/block.js");
 var Pervasives = require("bs-platform/lib/js/pervasives.js");
 
+function uhtyp_op_translater(op) {
+  switch (op) {
+    case /* Arrow */0 :
+        return " -> ";
+    case /* Prod */1 :
+        return " * ";
+    case /* Sum */2 :
+        return " | ";
+    
+  }
+}
+
 function uhtyp_translater(t) {
   if (typeof t === "number") {
     switch (t) {
@@ -34,15 +46,61 @@ function uhtyp_translater(t) {
             return ;
           }
       case /* OpSeq */2 :
-          return ;
+          var skel_t = t[0];
+          if (skel_t.tag && !skel_t[0]) {
+            return opseq_handler(t[1]);
+          } else {
+            return ;
+          }
       
     }
   }
 }
 
-var uhtyp_example = /* Parenthesized */Block.__(0, [/* List */Block.__(1, [/* Num */2])]);
+function opseq_handler(opseq) {
+  if (opseq.tag) {
+    var match = opseq_handler(opseq[0]);
+    var match$1 = uhtyp_translater(opseq[2]);
+    if (match !== undefined && match$1 !== undefined) {
+      return match + (" " + (uhtyp_op_translater(opseq[1]) + (" " + match$1)));
+    } else {
+      return ;
+    }
+  } else {
+    var match$2 = uhtyp_translater(opseq[0]);
+    var match$3 = uhtyp_translater(opseq[2]);
+    if (match$2 !== undefined && match$3 !== undefined) {
+      return match$2 + (" " + (uhtyp_op_translater(opseq[1]) + (" " + match$3)));
+    } else {
+      return ;
+    }
+  }
+}
 
-var match = uhtyp_translater(uhtyp_example);
+var uhtyp_example2 = /* Parenthesized */Block.__(0, [/* OpSeq */Block.__(2, [
+        /* BinOp */Block.__(1, [
+            /* NotInHole */0,
+            /* Arrow */0,
+            /* BinOp */Block.__(1, [
+                /* NotInHole */0,
+                /* Arrow */0,
+                /* Placeholder */Block.__(0, [0]),
+                /* Placeholder */Block.__(0, [1])
+              ]),
+            /* Placeholder */Block.__(0, [2])
+          ]),
+        /* SeqOpExp */Block.__(1, [
+            /* ExpOpExp */Block.__(0, [
+                /* Unit */1,
+                /* Arrow */0,
+                /* Bool */3
+              ]),
+            /* Arrow */0,
+            /* Num */2
+          ])
+      ])]);
+
+var match = uhtyp_translater(uhtyp_example2);
 
 if (match !== undefined) {
   console.log(match);
@@ -170,13 +228,30 @@ var example_listnil = /* Block */[
   /* ListNil */Block.__(4, [/* NotInHole */0])
 ];
 
+var uhtyp_example1 = /* Parenthesized */Block.__(0, [/* OpSeq */Block.__(2, [
+        /* BinOp */Block.__(1, [
+            /* NotInHole */0,
+            /* Arrow */0,
+            /* Placeholder */Block.__(0, [1]),
+            /* Placeholder */Block.__(0, [2])
+          ]),
+        /* ExpOpExp */Block.__(0, [
+            /* Num */2,
+            /* Arrow */0,
+            /* Num */2
+          ])
+      ])]);
+
 exports.example_let = example_let;
 exports.example_123 = example_123;
 exports.example_true = example_true;
 exports.example_emptyhole = example_emptyhole;
 exports.example_listnil = example_listnil;
+exports.uhtyp_op_translater = uhtyp_op_translater;
 exports.uhtyp_translater = uhtyp_translater;
-exports.uhtyp_example = uhtyp_example;
+exports.opseq_handler = opseq_handler;
+exports.uhtyp_example1 = uhtyp_example1;
+exports.uhtyp_example2 = uhtyp_example2;
 exports.emptyhole_handler = emptyhole_handler;
 exports.var_handler = var_handler;
 exports.numlit_handler = numlit_handler;

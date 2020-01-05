@@ -73,13 +73,34 @@ let rec uhtyp_translater = (~t : UHTyp.t) : option(string) =>
       | Some(s) => Some("(" ++ s ++ ")")
     }
     | Hole => None
-    | OpSeq(skel_t, opseq) => switch()
+    | OpSeq(skel_t, opseq) => switch(skel_t){
+      | BinOp(NotInHole, _, _, _) => opseq_handler(~opseq=opseq)
+      | _ => None
+    }
+  }
+  and opseq_handler = (~opseq) : option(string) => switch(opseq){
+        | ExpOpExp(tm1, op, tm2) => switch((uhtyp_translater(tm1), uhtyp_translater(tm2)))
+        {
+          | (Some(a), Some(b)) => Some(a ++ " " ++ uhtyp_op_translater(op) ++ " " ++ b)
+          | _ => None
+        }
+        | SeqOpExp(seq, op, tm) => switch(opseq_handler(~opseq=seq), uhtyp_translater(tm)) {
+          | (Some(a), Some(b)) => Some(a ++ " " ++ uhtyp_op_translater(op) ++ " " ++ b)
+          | _ => None
+        }
   };
 
 
-let uhtyp_example : UHTyp.t= Parenthesized(List(Num));
 
-switch(uhtyp_translater(~t=uhtyp_example)){
+let uhtyp_example1 : UHTyp.t= Parenthesized(OpSeq(
+    BinOp(NotInHole, Arrow, Placeholder(1), Placeholder(2)),
+    ExpOpExp(Num, Arrow, Num)));
+
+let uhtyp_example2 : UHTyp.t= Parenthesized(OpSeq(
+    BinOp(NotInHole, Arrow, BinOp(NotInHole, Arrow, Placeholder(0), Placeholder(1)), Placeholder(2)),
+    SeqOpExp(ExpOpExp(Unit, Arrow, Bool), Arrow, Num)));
+
+switch(uhtyp_translater(~t=uhtyp_example2)){
   | None => ()
   | Some(s) => print_endline(s)
 };
