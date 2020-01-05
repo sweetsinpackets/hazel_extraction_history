@@ -42,6 +42,11 @@ let example_listnil = Block(
 //      then line recursive
 //===============================
 
+//==============================
+//  UHTyp.re
+//==============================
+
+
 // Helper Functions
 
 let uhtyp_op_translater = (~op : UHTyp.op) : string =>
@@ -105,6 +110,9 @@ switch(uhtyp_translater(~t=uhtyp_example2)){
   | Some(s) => print_endline(s)
 };
 
+//==============================
+//  UHExp.re
+//==============================
 
 // OUTER NODES
 
@@ -137,6 +145,9 @@ let listnil_handler = (~errstatus : ErrStatus.t) : option(string) =>
   };
 
 // INNER NODES
+//TODO:Start here, from Lam
+
+
 
 
 
