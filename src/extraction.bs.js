@@ -4,18 +4,6 @@
 var Block = require("bs-platform/lib/js/block.js");
 var Pervasives = require("bs-platform/lib/js/pervasives.js");
 
-function uhtyp_op_translater(op) {
-  switch (op) {
-    case /* Arrow */0 :
-        return " -> ";
-    case /* Prod */1 :
-        return " * ";
-    case /* Sum */2 :
-        return " | ";
-    
-  }
-}
-
 function uhtyp_translater(t) {
   if (typeof t === "number") {
     switch (t) {
@@ -77,13 +65,119 @@ function opseq_handler(opseq) {
   }
 }
 
-var uhtyp_example2 = /* Parenthesized */Block.__(0, [/* OpSeq */Block.__(2, [
+function uhtyp_op_translater(op) {
+  switch (op) {
+    case /* Arrow */0 :
+        return " -> ";
+    case /* Prod */1 :
+        return " * ";
+    case /* Sum */2 :
+        return " | ";
+    
+  }
+}
+
+function uhpat_translater(_t) {
+  while(true) {
+    var t = _t;
+    switch (t.tag | 0) {
+      case /* EmptyHole */0 :
+          return ;
+      case /* Wild */1 :
+          if (t[0]) {
+            return ;
+          } else {
+            return "_";
+          }
+      case /* Var */2 :
+          if (t[0] || t[1]) {
+            return ;
+          } else {
+            return t[2];
+          }
+      case /* NumLit */3 :
+          if (t[0]) {
+            return ;
+          } else {
+            return String(t[1]);
+          }
+      case /* BoolLit */4 :
+          if (t[0]) {
+            return ;
+          } else {
+            return Pervasives.string_of_bool(t[1]);
+          }
+      case /* ListNil */5 :
+          if (t[0]) {
+            return ;
+          } else {
+            return "[]";
+          }
+      case /* Parenthesized */6 :
+          var match = uhpat_translater(t[0]);
+          if (match !== undefined) {
+            return "(" + (match + ")");
+          } else {
+            return ;
+          }
+      case /* OpSeq */7 :
+          var skel_t = t[0];
+          if (skel_t.tag && !skel_t[0]) {
+            return uhpat_opseq_handler(t[1]);
+          } else {
+            return ;
+          }
+      case /* Inj */8 :
+          if (t[0]) {
+            return ;
+          } else {
+            _t = t[2];
+            continue ;
+          }
+      
+    }
+  };
+}
+
+function uhpat_opseq_handler(opseq) {
+  if (opseq.tag) {
+    var match = uhpat_opseq_handler(opseq[0]);
+    var match$1 = uhpat_translater(opseq[2]);
+    if (match !== undefined && match$1 !== undefined) {
+      return match + (" " + (uhpat_op_translater(opseq[1]) + (" " + match$1)));
+    } else {
+      return ;
+    }
+  } else {
+    var match$2 = uhpat_translater(opseq[0]);
+    var match$3 = uhpat_translater(opseq[2]);
+    if (match$2 !== undefined && match$3 !== undefined) {
+      return match$2 + (" " + (uhpat_op_translater(opseq[1]) + (" " + match$3)));
+    } else {
+      return ;
+    }
+  }
+}
+
+function uhpat_op_translater(op) {
+  switch (op) {
+    case /* Comma */0 :
+        return ", ";
+    case /* Space */1 :
+        return " ";
+    case /* Cons */2 :
+        return " :: ";
+    
+  }
+}
+
+var uhpat_example1 = /* Parenthesized */Block.__(6, [/* OpSeq */Block.__(7, [
         /* BinOp */Block.__(1, [
             /* NotInHole */0,
-            /* Arrow */0,
+            /* Cons */2,
             /* BinOp */Block.__(1, [
                 /* NotInHole */0,
-                /* Arrow */0,
+                /* Cons */2,
                 /* Placeholder */Block.__(0, [0]),
                 /* Placeholder */Block.__(0, [1])
               ]),
@@ -91,16 +185,22 @@ var uhtyp_example2 = /* Parenthesized */Block.__(0, [/* OpSeq */Block.__(2, [
           ]),
         /* SeqOpExp */Block.__(1, [
             /* ExpOpExp */Block.__(0, [
-                /* Unit */1,
-                /* Arrow */0,
-                /* Bool */3
+                /* NumLit */Block.__(3, [
+                    /* NotInHole */0,
+                    1
+                  ]),
+                /* Cons */2,
+                /* NumLit */Block.__(3, [
+                    /* NotInHole */0,
+                    2
+                  ])
               ]),
-            /* Arrow */0,
-            /* Num */2
+            /* Cons */2,
+            /* ListNil */Block.__(5, [/* NotInHole */0])
           ])
       ])]);
 
-var match = uhtyp_translater(uhtyp_example2);
+var match = uhpat_translater(uhpat_example1);
 
 if (match !== undefined) {
   console.log(match);
@@ -228,30 +328,18 @@ var example_listnil = /* Block */[
   /* ListNil */Block.__(4, [/* NotInHole */0])
 ];
 
-var uhtyp_example1 = /* Parenthesized */Block.__(0, [/* OpSeq */Block.__(2, [
-        /* BinOp */Block.__(1, [
-            /* NotInHole */0,
-            /* Arrow */0,
-            /* Placeholder */Block.__(0, [1]),
-            /* Placeholder */Block.__(0, [2])
-          ]),
-        /* ExpOpExp */Block.__(0, [
-            /* Num */2,
-            /* Arrow */0,
-            /* Num */2
-          ])
-      ])]);
-
 exports.example_let = example_let;
 exports.example_123 = example_123;
 exports.example_true = example_true;
 exports.example_emptyhole = example_emptyhole;
 exports.example_listnil = example_listnil;
-exports.uhtyp_op_translater = uhtyp_op_translater;
 exports.uhtyp_translater = uhtyp_translater;
 exports.opseq_handler = opseq_handler;
-exports.uhtyp_example1 = uhtyp_example1;
-exports.uhtyp_example2 = uhtyp_example2;
+exports.uhtyp_op_translater = uhtyp_op_translater;
+exports.uhpat_translater = uhpat_translater;
+exports.uhpat_opseq_handler = uhpat_opseq_handler;
+exports.uhpat_op_translater = uhpat_op_translater;
+exports.uhpat_example1 = uhpat_example1;
 exports.emptyhole_handler = emptyhole_handler;
 exports.var_handler = var_handler;
 exports.numlit_handler = numlit_handler;

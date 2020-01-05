@@ -46,17 +46,6 @@ let example_listnil = Block(
 //  UHTyp.re
 //==============================
 
-
-// Helper Functions
-
-let uhtyp_op_translater = (~op : UHTyp.op) : string =>
-  switch(op) {
-    | Arrow => " -> "
-    | Prod => " * " //int*int in ocaml
-    | Sum => " | "
-  }
-
-
 // translate type constructor into ocaml type
 //opseq is when using bi-argument operations like plus,
 //skel.t use BinOp to indicate the operation(op) and two placeholder
@@ -93,19 +82,96 @@ let rec uhtyp_translater = (~t : UHTyp.t) : option(string) =>
           | (Some(a), Some(b)) => Some(a ++ " " ++ uhtyp_op_translater(op) ++ " " ++ b)
           | _ => None
         }
+  } and uhtyp_op_translater = (~op : UHTyp.op) : string =>
+  switch(op) {
+    | Arrow => " -> "
+    | Prod => " * " //int*int in ocaml
+    | Sum => " | "
   };
 
 
 
-let uhtyp_example1 : UHTyp.t= Parenthesized(OpSeq(
-    BinOp(NotInHole, Arrow, Placeholder(1), Placeholder(2)),
-    ExpOpExp(Num, Arrow, Num)));
+// let uhtyp_example1 : UHTyp.t= Parenthesized(OpSeq(
+//     BinOp(NotInHole, Arrow, Placeholder(1), Placeholder(2)),
+//     ExpOpExp(Num, Arrow, Num)));
 
-let uhtyp_example2 : UHTyp.t= Parenthesized(OpSeq(
-    BinOp(NotInHole, Arrow, BinOp(NotInHole, Arrow, Placeholder(0), Placeholder(1)), Placeholder(2)),
-    SeqOpExp(ExpOpExp(Unit, Arrow, Bool), Arrow, Num)));
+// let uhtyp_example2 : UHTyp.t= Parenthesized(OpSeq(
+//     BinOp(NotInHole, Arrow, BinOp(NotInHole, Arrow, Placeholder(0), Placeholder(1)), Placeholder(2)),
+//     SeqOpExp(ExpOpExp(Unit, Arrow, Bool), Arrow, Num)));
 
-switch(uhtyp_translater(~t=uhtyp_example2)){
+// switch(uhtyp_translater(~t=uhtyp_example2)){
+//   | None => ()
+//   | Some(s) => print_endline(s)
+// };
+
+
+//==============================
+// UHPat.re
+//==============================
+
+let rec uhpat_translater = (~t : UHPat.t) : option(string) =>
+  switch(t) {
+    | EmptyHole(_) => None
+    | Wild(a) => switch(a) {
+      | NotInHole => Some("_")
+      | _ => None
+    }
+    | Var(a, b, c) => switch(a, b) {
+      | (NotInHole, NotInVarHole) => Some(c)
+      | _ => None
+    }
+    | NumLit(a, b) => switch(a) {
+      | NotInHole => Some(string_of_int(b))
+      | _ => None
+    }
+    | BoolLit(a, b) => switch(a) {
+      | NotInHole => Some(string_of_bool(b))
+      | _ => None
+    }
+    | ListNil(a) => switch(a) {
+      | NotInHole => Some("[]")
+      | _ => None
+    }
+    | Parenthesized(t) => switch(uhpat_translater(t)) {
+      | None => None
+      | Some(s) => Some("(" ++ s ++ ")")
+    }
+    //TODO: currently we use polymorphic type ('a) for it, 
+    // better to reconstruct for a type
+    // (though the inference is good for that)
+    | Inj(a, b, c) => switch(a) {
+      | NotInHole => uhpat_translater(~t = c)
+      | _ => None
+    }
+    | OpSeq(skel_t, opseq) => switch(skel_t){
+      | BinOp(NotInHole, _, _, _) => uhpat_opseq_handler(~opseq=opseq)
+      | _ => None
+    }
+  } and uhpat_opseq_handler = (~opseq) : option(string) => switch(opseq){
+        | ExpOpExp(tm1, op, tm2) => switch((uhpat_translater(tm1), uhpat_translater(tm2)))
+        {
+          | (Some(a), Some(b)) => Some(a ++ " " ++ uhpat_op_translater(op) ++ " " ++ b)
+          | _ => None
+        }
+        | SeqOpExp(seq, op, tm) => switch(uhpat_opseq_handler(~opseq=seq), uhpat_translater(tm)) {
+          | (Some(a), Some(b)) => Some(a ++ " " ++ uhpat_op_translater(op) ++ " " ++ b)
+          | _ => None
+        }
+  } and uhpat_op_translater = (~op : UHPat.op) : string => switch(op) {
+    | Comma => ", "
+    | Space => " "
+    | Cons => " :: "
+  };
+
+
+//testcases
+let uhpat_example1 : UHPat.t = Parenthesized(OpSeq(
+    BinOp(NotInHole, Cons, BinOp(NotInHole, Cons, Placeholder(0), Placeholder(1)), Placeholder(2)),
+    SeqOpExp(ExpOpExp(NumLit(NotInHole, 1), Cons, NumLit(NotInHole, 2)), Cons, ListNil(NotInHole))));
+
+let uhpat_example2 : UHPat.t = 
+
+switch(uhpat_translater(~t=uhpat_example1)){
   | None => ()
   | Some(s) => print_endline(s)
 };
