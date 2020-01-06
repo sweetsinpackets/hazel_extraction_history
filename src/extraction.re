@@ -142,7 +142,7 @@ let rec uhpat_translater = (~t : UHPat.t) : option(string) =>
       | None => None
       | Some(s) => Some("(" ++ s ++ ")")
     }
-    //FIXME: currently we use polymorphic type ('a) for it, 
+    //FIXME: currently we use polymorphic type ('a) for it in "Let" assignment, 
     // better to reconstruct for a type
     // (though the inference is good for that)
     // in Hazel, a type Num | Bool can't have value 1, 
@@ -228,6 +228,10 @@ type_handler = (~t : t) : option(string) =>
     }
     // inner nodes
     | Lam(a, b, c, d) => lam_handler(~errstatus=a, ~uhpat=b, ~uhtyp=c, ~block=d)
+    | Parenthesized(b) => switch(block_handler(b)) {
+      | None => None
+      | Some(s) => Some("(" ++ s ++ ")")
+    }
     | _ => None
   }
 and   // Lam helper function
