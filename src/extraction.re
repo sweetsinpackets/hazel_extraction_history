@@ -180,6 +180,9 @@ switch(uhpat_translater(~t=uhpat_example1)){
 //  UHExp.re
 //==============================
 
+// using "fun list(_ : type) -> expr" as lambda expression
+
+
 // OUTER NODES
 
 // it means there's empty hole, so it will fail
