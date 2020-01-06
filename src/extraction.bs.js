@@ -171,75 +171,8 @@ function uhpat_op_translater(op) {
   }
 }
 
-var uhpat_example1 = /* Parenthesized */Block.__(6, [/* OpSeq */Block.__(7, [
-        /* BinOp */Block.__(1, [
-            /* NotInHole */0,
-            /* Cons */2,
-            /* BinOp */Block.__(1, [
-                /* NotInHole */0,
-                /* Cons */2,
-                /* Placeholder */Block.__(0, [0]),
-                /* Placeholder */Block.__(0, [1])
-              ]),
-            /* Placeholder */Block.__(0, [2])
-          ]),
-        /* SeqOpExp */Block.__(1, [
-            /* ExpOpExp */Block.__(0, [
-                /* NumLit */Block.__(3, [
-                    /* NotInHole */0,
-                    1
-                  ]),
-                /* Cons */2,
-                /* NumLit */Block.__(3, [
-                    /* NotInHole */0,
-                    2
-                  ])
-              ]),
-            /* Cons */2,
-            /* ListNil */Block.__(5, [/* NotInHole */0])
-          ])
-      ])]);
-
-var match = uhpat_translater(uhpat_example1);
-
-if (match !== undefined) {
-  console.log(match);
-}
-
-function emptyhole_handler(param) {
-  return ;
-}
-
-function var_handler(errstatus, varerrstatus, value) {
-  if (errstatus || varerrstatus) {
-    return ;
-  } else {
-    return value;
-  }
-}
-
-function numlit_handler(errstatus, value) {
-  if (errstatus) {
-    return ;
-  } else {
-    return String(value);
-  }
-}
-
-function boollit_handler(errstatus, value) {
-  if (errstatus) {
-    return ;
-  } else {
-    return Pervasives.string_of_bool(value);
-  }
-}
-
-function listnil_handler(errstatus) {
-  if (errstatus) {
-    return ;
-  } else {
-    return "[]";
-  }
+function block_handler(block) {
+  return type_handler(block[1]);
 }
 
 function type_handler(t) {
@@ -247,24 +180,57 @@ function type_handler(t) {
     case /* EmptyHole */0 :
         return ;
     case /* Var */1 :
-        return var_handler(t[0], t[1], t[2]);
+        if (t[0] || t[1]) {
+          return ;
+        } else {
+          return t[2];
+        }
     case /* NumLit */2 :
-        return numlit_handler(t[0], t[1]);
+        if (t[0]) {
+          return ;
+        } else {
+          return String(t[1]);
+        }
     case /* BoolLit */3 :
-        return boollit_handler(t[0], t[1]);
+        if (t[0]) {
+          return ;
+        } else {
+          return Pervasives.string_of_bool(t[1]);
+        }
     case /* ListNil */4 :
         if (t[0]) {
           return ;
         } else {
           return "[]";
         }
+    case /* Lam */5 :
+        return lam_handler(t[0], t[1], t[2], t[3]);
     default:
       return ;
   }
 }
 
-function block_handler(block) {
-  return type_handler(block[1]);
+function lam_handler(errstatus, uhpat, uhtyp, block) {
+  if (errstatus) {
+    return ;
+  } else if (uhtyp !== undefined) {
+    var match = uhpat_translater(uhpat);
+    var match$1 = uhtyp_translater(uhtyp);
+    var match$2 = block_handler(block);
+    if (match !== undefined && match$1 !== undefined && match$2 !== undefined) {
+      return "fun " + (match + (":" + (match$1 + (" -> " + match$2))));
+    } else {
+      return ;
+    }
+  } else {
+    var match$3 = uhpat_translater(uhpat);
+    var match$4 = block_handler(block);
+    if (match$3 !== undefined && match$4 !== undefined) {
+      return "fun " + (match$3 + (" -> " + match$4));
+    } else {
+      return ;
+    }
+  }
 }
 
 function extraction_caller(block) {
@@ -272,9 +238,44 @@ function extraction_caller(block) {
   if (match !== undefined) {
     return match;
   } else {
-    return "It's not completed!";
+    return "There could be some error in the code. Most possible is incomplete holes.";
   }
 }
+
+var example_lam2 = /* Block */[
+  /* [] */0,
+  /* Lam */Block.__(5, [
+      /* NotInHole */0,
+      /* Var */Block.__(2, [
+          /* NotInHole */0,
+          /* NotInVarHole */0,
+          "x"
+        ]),
+      /* Num */2,
+      /* Block */[
+        /* [] */0,
+        /* Lam */Block.__(5, [
+            /* NotInHole */0,
+            /* Var */Block.__(2, [
+                /* NotInHole */0,
+                /* NotInVarHole */0,
+                "y"
+              ]),
+            /* Num */2,
+            /* Block */[
+              /* [] */0,
+              /* Var */Block.__(1, [
+                  /* NotInHole */0,
+                  /* NotInVarHole */0,
+                  "xy"
+                ])
+            ]
+          ])
+      ]
+    ])
+];
+
+console.log(extraction_caller(example_lam2));
 
 var example_let = /* Block */[
   /* :: */[
@@ -328,24 +329,42 @@ var example_listnil = /* Block */[
   /* ListNil */Block.__(4, [/* NotInHole */0])
 ];
 
-exports.example_let = example_let;
-exports.example_123 = example_123;
-exports.example_true = example_true;
-exports.example_emptyhole = example_emptyhole;
-exports.example_listnil = example_listnil;
+var example_lam1 = /* Block */[
+  /* [] */0,
+  /* Lam */Block.__(5, [
+      /* NotInHole */0,
+      /* Var */Block.__(2, [
+          /* NotInHole */0,
+          /* NotInVarHole */0,
+          "x"
+        ]),
+      undefined,
+      /* Block */[
+        /* [] */0,
+        /* Var */Block.__(1, [
+            /* NotInHole */0,
+            /* NotInVarHole */0,
+            "x"
+          ])
+      ]
+    ])
+];
+
 exports.uhtyp_translater = uhtyp_translater;
 exports.opseq_handler = opseq_handler;
 exports.uhtyp_op_translater = uhtyp_op_translater;
 exports.uhpat_translater = uhpat_translater;
 exports.uhpat_opseq_handler = uhpat_opseq_handler;
 exports.uhpat_op_translater = uhpat_op_translater;
-exports.uhpat_example1 = uhpat_example1;
-exports.emptyhole_handler = emptyhole_handler;
-exports.var_handler = var_handler;
-exports.numlit_handler = numlit_handler;
-exports.boollit_handler = boollit_handler;
-exports.listnil_handler = listnil_handler;
-exports.type_handler = type_handler;
 exports.block_handler = block_handler;
+exports.type_handler = type_handler;
+exports.lam_handler = lam_handler;
 exports.extraction_caller = extraction_caller;
-/* match Not a pure module */
+exports.example_let = example_let;
+exports.example_123 = example_123;
+exports.example_true = example_true;
+exports.example_emptyhole = example_emptyhole;
+exports.example_listnil = example_listnil;
+exports.example_lam1 = example_lam1;
+exports.example_lam2 = example_lam2;
+/*  Not a pure module */
