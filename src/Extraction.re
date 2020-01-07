@@ -6,7 +6,7 @@ let rec indent_space = (~level : int) : string =>
   if (level > 0) {"  " ++ indent_space(~level=level-1)}
   else {""};
 
-// print_endline(indent_space(1) ++ "Hello")
+//print_endline(indent_space(2) ++ "Hello")
 
 //==============================
 //  UHTyp.re
@@ -216,12 +216,16 @@ let uhexp_op_translater =(~op : UHExp.op) : string =>
 
 
 //TODO: complete the block and line part, add indent level indicater
-let rec block_handler=(~block : block) : option(string) => 
+//      We should force that Block([], outer nodes) should have indent 0  
+//      In each recursive call, we will proceed indent level by 1
+let rec block_handler=(~block : block, ~level : int) : option(string) => 
   switch(block) {
-    | Block(lines, t) => type_handler(~t=t)
+    | Block(lines, t) => type_handler(~t=t, ~level=level)
   }
 and //The t part
-type_handler = (~t : t) : option(string) =>
+type_handler = (~t : t, ~level : int) : option(string) =>
+//Not all items need the level
+//If it's a expression and no lines, no indent will apply
   switch(t) {
     // outer nodes
     | EmptyHole(_) => None  //an empty hole always means incomplete
@@ -242,78 +246,81 @@ type_handler = (~t : t) : option(string) =>
       | _ => None
     }
     // inner nodes
-    | Lam(a, b, c, d) => lam_handler(~errstatus=a, ~uhpat=b, ~uhtyp=c, ~block=d)
-    | Inj(a, b, c) => inj_handler(~errstatus=a, ~injside=b, ~block=c)
+    | Lam(a, b, c, d) => lam_handler(~errstatus=a, ~uhpat=b, ~uhtyp=c, ~block=d, ~level=level)
+    | Inj(a, b, c) => inj_handler(~errstatus=a, ~injside=b, ~block=c, ~level=level)
     | Case(a, b, c, d) => switch(a) {
-      | NotInHole => case_handler(~block=b, ~rules=c, ~uhtyp=d)
+      | NotInHole => case_handler(~block=b, ~rules=c, ~uhtyp=d, ~level=level)
       | _ => None
     }
-    | Parenthesized(b) => switch(block_handler(~block=b)) {
+    | Parenthesized(b) => switch(block_handler(~block=b, ~level=level)) {
       | None => None
       | Some(s) => Some("(" ++ s ++ ")")
     }    
     | OpSeq(skel_t, opseq) => switch(skel_t) {
       //since invariant of skel_t and opseq, decline skel_t
-      | BinOp(NotInHole, _, _, _) => opseq_handler(~opseq=opseq)
+      | BinOp(NotInHole, _, _, _) => opseq_handler(~opseq=opseq, ~level=level)
       | _ => None
     }
     //TODO: ApPalette
     | _ => None
   }
 and   // Lam helper function
-lam_handler = (~errstatus : ErrStatus.t, ~uhpat : UHPat.t, ~uhtyp : option(UHTyp.t), ~block : block) : option(string) => 
+lam_handler = (~errstatus : ErrStatus.t, ~uhpat : UHPat.t, ~uhtyp : option(UHTyp.t), ~block : block, ~level:int) : option(string) => 
   //UHTyp we receive a Some(Hole), it maybe legal to inference
   //Just use another version of uhtyp_translator
   switch(errstatus, uhpat, uhtyp){
-    | (NotInHole, pat, None) => switch(uhpat_translater(pat), block_handler(~block=block)) {
-      //Maybe here need ()
-      | (Some(s), Some(b)) => Some("fun " ++ s ++ " -> " ++ b) 
+    | (NotInHole, pat, None) => switch(uhpat_translater(pat), block_handler(~block=block, ~level=level+1)) {
+      //here we don't need indent because it's follow some expression like "="
+      //but maybe writting it in a new line needs
+      //TODO: currently insert an () to protect codes, figure out whether can remove
+      | (Some(s), Some(b)) => Some("(fun " ++ s ++ " -> " ++ b ++ ")") 
       | _ => None
     }
-    | (NotInHole, pat, Some(typ)) => switch(uhpat_translater(pat), uhtyp_translater(typ), block_handler(~block=block)) {
+    | (NotInHole, pat, Some(typ)) => switch(uhpat_translater(pat), uhtyp_translater(typ), block_handler(~block=block, ~level=level+1)) {
       //Maybe here need ()
-      | (Some(s), Some(t), Some(b)) => Some("fun " ++ s ++ ":" ++ t ++ " -> " ++ b) 
+      | (Some(s), Some(t), Some(b)) => Some("(fun " ++ s ++ ":" ++ t ++ " -> " ++ b ++ ")") 
       | _ => None
     }
     | _ => None
   }
 and
-inj_handler = (~errstatus : ErrStatus.t, ~injside : InjSide.t, ~block : block) : option(string) =>
+inj_handler = (~errstatus : ErrStatus.t, ~injside : InjSide.t, ~block : block, ~level: int) : option(string) =>
   //FIXME: Another injection issue
   switch(errstatus) {
-    | NotInHole => block_handler(block)
+    | NotInHole => block_handler(~block=block, ~level=level+1)
     | _ => None
   }
 and
-opseq_handler = (~opseq : UHExp.opseq) : option(string) => switch(opseq){
-    | ExpOpExp(tm1, op, tm2) => switch((type_handler(tm1), type_handler(tm2)))
+opseq_handler = (~opseq : UHExp.opseq, ~level : int) : option(string) => switch(opseq){
+    | ExpOpExp(tm1, op, tm2) => switch((type_handler(~t=tm1, ~level=level+1), type_handler(~t=tm2, ~level=level+1)))
     {
       | (Some(a), Some(b)) => Some(a ++ " " ++ uhexp_op_translater(op) ++ " " ++ b)
       | _ => None
     }
-    | SeqOpExp(seq, op, tm) => switch(opseq_handler(~opseq=seq), type_handler(tm)) {
+    | SeqOpExp(seq, op, tm) => switch(opseq_handler(~opseq=seq, ~level=level+1), type_handler(~t=tm, ~level=level+1)) {
       | (Some(a), Some(b)) => Some(a ++ " " ++ uhexp_op_translater(op) ++ " " ++ b)
       | _ => None
     }
   }
 and //put errstatus check into the main function
-case_handler = (~block : block, ~rules : list(rule), ~uhtyp : option(UHTyp.t)) : option(string) =>
+case_handler = (~block : block, ~rules : list(rule), ~uhtyp : option(UHTyp.t), ~level:int) : option(string) =>
   // block is the item to switch, rules are patterns, uhtyp is the last given type
   // case a | 1 => true | 2 => false end : bool
   // FIXME: still can let ocaml to do type inference, so just discard the uhtyp
   //        indeed, ocaml has nowhere to assign type for match structure
-  switch (block_handler(~block=block), rule_handler(~rules=rules)) {
+  switch (block_handler(~block=block, ~level=level), rule_handler(~rules=rules, ~level=level+1)) {
     //FIXME: Currently using () to handle nested case, but a little bit ugly for the first one
     | (Some(b), Some(r)) => Some("(match " ++ b ++ " with" ++ r ++")")
+    // match should be after some expression, so don't indent
     | _ => None
   }  
   // expected to output "\n  | expr => expr "
-  // FIXME: the tabs is now fixed but not according to line
-  and rule_handler = (~rules : list(rule)) : option(string) => switch(rules) {
+  and rule_handler = (~rules : list(rule), ~level : int) : option(string) => switch(rules) {
     | [] => Some("")
-    | [rule, ...rest] => switch(rule, rule_handler(~rules=rest)) {
-      | (Rule(uhpat, block), Some(result)) => switch(uhpat_translater(~t=uhpat), block_handler(~block=block)) {
-        | (Some(t), Some(expr)) => Some("\n  | " ++ t ++ " -> " ++ expr ++ result)
+    | [rule, ...rest] => switch(rule, rule_handler(~rules=rest, ~level=level)) {
+      | (Rule(uhpat, block), Some(result)) => switch(uhpat_translater(~t=uhpat), block_handler(~block=block, ~level=level+1)) {
+        // Don't proceed on level because all are same level
+        | (Some(t), Some(expr)) => Some("\n" ++ indent_space(~level=level) ++  "| " ++ t ++ " -> " ++ expr ++ result)
         | _ => None
       }
       | _ => None
@@ -325,7 +332,7 @@ case_handler = (~block : block, ~rules : list(rule), ~uhtyp : option(UHTyp.t)) :
 
 //used to handle None errors, or incomplete codes
 let extraction_caller=(~block : block) : string =>
-  switch(block_handler(~block=block)) {
+  switch(block_handler(~block=block, ~level=0)) {
     | None => "There could be some error in the code. Most possible is incomplete holes."
     | Some(s) => s
   };
@@ -413,7 +420,24 @@ let case_example2 = Block(
   [],
   Case(NotInHole,
       Block([], Var(NotInHole, NotInVarHole, "x")),
-      [Rule(ListNil(NotInHole), Block([], NumLit(NotInHole, 0))),
+      [Rule(ListNil(NotInHole), Block(
+        [],
+        Lam(NotInHole, 
+            Var(NotInHole, NotInVarHole, "x"),
+            Some(Num),
+            Block(
+              [],
+              Lam(NotInHole,
+                  Var(NotInHole, NotInVarHole, "y"),
+                  Some(Num),
+                  Block(
+                    [],
+                    Var(NotInHole, NotInVarHole, "xy")  //need to modify
+                  )
+              )
+            )
+        )
+      )),
        Rule(Var(NotInHole, NotInVarHole, "a"), Block([], BoolLit(NotInHole, true))),
        Rule(Wild(NotInHole), Block(
   [],
@@ -422,8 +446,11 @@ let case_example2 = Block(
       [Rule(ListNil(NotInHole), Block([], NumLit(NotInHole, 1))),
        Rule(Var(NotInHole, NotInVarHole, "b"), Block([], BoolLit(NotInHole, true)))
 ], Some(Unit))
-))
+)),
+       Rule(Var(NotInHole, NotInVarHole, "a"), Block([], BoolLit(NotInHole, true)))
 ], Some(Unit))
 )
 
-print_endline(extraction_caller(~block=case_example2));
+let parenthesized_example1 = Block([], Parenthesized(case_example2))
+
+print_endline(extraction_caller(~block=parenthesized_example1));

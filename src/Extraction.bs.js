@@ -207,11 +207,11 @@ function uhexp_op_translater(op) {
   }
 }
 
-function block_handler(block) {
-  return type_handler(block[1]);
+function block_handler(block, level) {
+  return type_handler(block[1], level);
 }
 
-function type_handler(t) {
+function type_handler(t, level) {
   switch (t.tag | 0) {
     case /* Var */1 :
         if (t[0] || t[1]) {
@@ -238,17 +238,17 @@ function type_handler(t) {
           return "[]";
         }
     case /* Lam */5 :
-        return lam_handler(t[0], t[1], t[2], t[3]);
+        return lam_handler(t[0], t[1], t[2], t[3], level);
     case /* Inj */6 :
-        return inj_handler(t[0], t[1], t[2]);
+        return inj_handler(t[0], t[1], t[2], level);
     case /* Case */7 :
         if (t[0]) {
           return ;
         } else {
-          return case_handler(t[1], t[2], t[3]);
+          return case_handler(t[1], t[2], t[3], level);
         }
     case /* Parenthesized */8 :
-        var match = block_handler(t[0]);
+        var match = block_handler(t[0], level);
         if (match !== undefined) {
           return "(" + (match + ")");
         } else {
@@ -257,7 +257,7 @@ function type_handler(t) {
     case /* OpSeq */9 :
         var skel_t = t[0];
         if (skel_t.tag && !skel_t[0]) {
-          return opseq_handler(t[1]);
+          return opseq_handler(t[1], level);
         } else {
           return ;
         }
@@ -268,49 +268,49 @@ function type_handler(t) {
   }
 }
 
-function lam_handler(errstatus, uhpat, uhtyp, block) {
+function lam_handler(errstatus, uhpat, uhtyp, block, level) {
   if (errstatus) {
     return ;
   } else if (uhtyp !== undefined) {
     var match = uhpat_translater(uhpat);
     var match$1 = uhtyp_translater(uhtyp);
-    var match$2 = block_handler(block);
+    var match$2 = block_handler(block, level + 1 | 0);
     if (match !== undefined && match$1 !== undefined && match$2 !== undefined) {
-      return "fun " + (match + (":" + (match$1 + (" -> " + match$2))));
+      return "(fun " + (match + (":" + (match$1 + (" -> " + (match$2 + ")")))));
     } else {
       return ;
     }
   } else {
     var match$3 = uhpat_translater(uhpat);
-    var match$4 = block_handler(block);
+    var match$4 = block_handler(block, level + 1 | 0);
     if (match$3 !== undefined && match$4 !== undefined) {
-      return "fun " + (match$3 + (" -> " + match$4));
+      return "(fun " + (match$3 + (" -> " + (match$4 + ")")));
     } else {
       return ;
     }
   }
 }
 
-function inj_handler(errstatus, injside, block) {
+function inj_handler(errstatus, injside, block, level) {
   if (errstatus) {
     return ;
   } else {
-    return block_handler(block);
+    return block_handler(block, level + 1 | 0);
   }
 }
 
-function opseq_handler(opseq) {
+function opseq_handler(opseq, level) {
   if (opseq.tag) {
-    var match = opseq_handler(opseq[0]);
-    var match$1 = type_handler(opseq[2]);
+    var match = opseq_handler(opseq[0], level + 1 | 0);
+    var match$1 = type_handler(opseq[2], level + 1 | 0);
     if (match !== undefined && match$1 !== undefined) {
       return match + (" " + (uhexp_op_translater(opseq[1]) + (" " + match$1)));
     } else {
       return ;
     }
   } else {
-    var match$2 = type_handler(opseq[0]);
-    var match$3 = type_handler(opseq[2]);
+    var match$2 = type_handler(opseq[0], level + 1 | 0);
+    var match$3 = type_handler(opseq[2], level + 1 | 0);
     if (match$2 !== undefined && match$3 !== undefined) {
       return match$2 + (" " + (uhexp_op_translater(opseq[1]) + (" " + match$3)));
     } else {
@@ -319,24 +319,24 @@ function opseq_handler(opseq) {
   }
 }
 
-function case_handler(block, rules, uhtyp) {
-  var match = block_handler(block);
-  var match$1 = rule_handler(rules);
+function case_handler(block, rules, uhtyp, level) {
+  var match = block_handler(block, level);
+  var match$1 = rule_handler(rules, level + 1 | 0);
   if (match !== undefined && match$1 !== undefined) {
     return "(match " + (match + (" with" + (match$1 + ")")));
   }
   
 }
 
-function rule_handler(rules) {
+function rule_handler(rules, level) {
   if (rules) {
     var rule = rules[0];
-    var match = rule_handler(rules[1]);
+    var match = rule_handler(rules[1], level);
     if (match !== undefined) {
       var match$1 = uhpat_translater(rule[0]);
-      var match$2 = block_handler(rule[1]);
+      var match$2 = block_handler(rule[1], level + 1 | 0);
       if (match$1 !== undefined && match$2 !== undefined) {
-        return "\n  | " + (match$1 + (" -> " + (match$2 + match)));
+        return "\n" + (indent_space(level) + ("| " + (match$1 + (" -> " + (match$2 + match)))));
       } else {
         return ;
       }
@@ -349,7 +349,7 @@ function rule_handler(rules) {
 }
 
 function extraction_caller(block) {
-  var match = block_handler(block);
+  var match = block_handler(block, 0);
   if (match !== undefined) {
     return match;
   } else {
@@ -374,9 +374,34 @@ var case_example2 = /* Block */[
           /* ListNil */Block.__(5, [/* NotInHole */0]),
           /* Block */[
             /* [] */0,
-            /* NumLit */Block.__(2, [
+            /* Lam */Block.__(5, [
                 /* NotInHole */0,
-                0
+                /* Var */Block.__(2, [
+                    /* NotInHole */0,
+                    /* NotInVarHole */0,
+                    "x"
+                  ]),
+                /* Num */2,
+                /* Block */[
+                  /* [] */0,
+                  /* Lam */Block.__(5, [
+                      /* NotInHole */0,
+                      /* Var */Block.__(2, [
+                          /* NotInHole */0,
+                          /* NotInVarHole */0,
+                          "y"
+                        ]),
+                      /* Num */2,
+                      /* Block */[
+                        /* [] */0,
+                        /* Var */Block.__(1, [
+                            /* NotInHole */0,
+                            /* NotInVarHole */0,
+                            "xy"
+                          ])
+                      ]
+                    ])
+                ]
               ])
           ]
         ],
@@ -443,7 +468,23 @@ var case_example2 = /* Block */[
                   ])
               ]
             ],
-            /* [] */0
+            /* :: */[
+              /* Rule */[
+                /* Var */Block.__(2, [
+                    /* NotInHole */0,
+                    /* NotInVarHole */0,
+                    "a"
+                  ]),
+                /* Block */[
+                  /* [] */0,
+                  /* BoolLit */Block.__(3, [
+                      /* NotInHole */0,
+                      true
+                    ])
+                ]
+              ],
+              /* [] */0
+            ]
           ]
         ]
       ],
@@ -451,7 +492,14 @@ var case_example2 = /* Block */[
     ])
 ];
 
-console.log(extraction_caller(case_example2));
+var parenthesized_example1_001 = /* Parenthesized */Block.__(8, [case_example2]);
+
+var parenthesized_example1 = /* Block */[
+  /* [] */0,
+  parenthesized_example1_001
+];
+
+console.log(extraction_caller(parenthesized_example1));
 
 var example_let = /* Block */[
   /* :: */[
@@ -629,4 +677,5 @@ exports.example_lam1 = example_lam1;
 exports.example_lam2 = example_lam2;
 exports.case_example1 = case_example1;
 exports.case_example2 = case_example2;
+exports.parenthesized_example1 = parenthesized_example1;
 /*  Not a pure module */
