@@ -236,20 +236,21 @@ type_handler = (~t : t) : option(string) =>
     }
     // inner nodes
     | Lam(a, b, c, d) => lam_handler(~errstatus=a, ~uhpat=b, ~uhtyp=c, ~block=d)
-    | Parenthesized(b) => switch(block_handler(b)) {
+    | Inj(a, b, c) => inj_handler(~errstatus=a, ~injside=b, ~block=c)
+    | Case(a, b, c, d) => switch(a) {
+      | NotInHole => case_handler(~block=b, ~rules=c, ~uhtyp=d)
+      | _ => None
+    }
+    | Parenthesized(b) => switch(block_handler(~block=b)) {
       | None => None
       | Some(s) => Some("(" ++ s ++ ")")
-    }
-    | Inj(a, b, c) => inj_handler(~errstatus=a, ~injside=b, ~block=c)
+    }    
     | OpSeq(skel_t, opseq) => switch(skel_t) {
       //since invariant of skel_t and opseq, decline skel_t
       | BinOp(NotInHole, _, _, _) => opseq_handler(~opseq=opseq)
       | _ => None
     }
-    | Case(a, b, c, d) => switch(a) {
-      | NotInHole => case_handler()
-      | _ => None
-    }
+    //TODO: ApPalette
     | _ => None
   }
 and   // Lam helper function
@@ -294,8 +295,23 @@ case_handler = (~block : block, ~rules : list(rule), ~uhtyp : option(UHTyp.t)) :
   // case a | 1 => true | 2 => false end : bool
   // FIXME: still can let ocaml to do type inference, so just discard the uhtyp
   //        indeed, ocaml has nowhere to assign type for match structure
-  switch(rules) {
-    | 
+  switch (block_handler(~block=block), rule_handler(~rules=rules)) {
+    //FIXME: don't know whether to add ";" at end of case
+    //        may conflict with lines to create a ";;"
+    | (Some(b), Some(r)) => Some("match " ++ b ++ " with\n" ++ r)
+    | _ => None
+  }  
+  // expected to output "  | expr => expr \n"
+  // FIXME: the tabs is now fixed but not according to line
+  and rule_handler = (~rules : list(rule)) : option(string) => switch(rules) {
+    | [] => Some("")
+    | [rule, ...rest] => switch(rule, rule_handler(~rules=rest)) {
+      | (Rule(uhpat, block), Some(result)) => switch(uhpat_translater(~t=uhpat), block_handler(~block=block)) {
+        | (Some(t), Some(expr)) => Some("  | " ++ t ++ " -> " ++ expr ++ " \n" ++ result)
+        | _ => None
+      }
+      | _ => None
+    }
   };
 
 //=============================
@@ -377,5 +393,7 @@ let example_lam2 = Block(
       )
   )
 );
+
+//let case_example1 = Block()
 
 print_endline(extraction_caller(~block=example_lam2));

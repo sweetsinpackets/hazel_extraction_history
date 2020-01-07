@@ -233,6 +233,12 @@ function type_handler(t) {
         return lam_handler(t[0], t[1], t[2], t[3]);
     case /* Inj */6 :
         return inj_handler(t[0], t[1], t[2]);
+    case /* Case */7 :
+        if (t[0]) {
+          return ;
+        } else {
+          return case_handler(t[1], t[2], t[3]);
+        }
     case /* Parenthesized */8 :
         var match = block_handler(t[0]);
         if (match !== undefined) {
@@ -248,7 +254,6 @@ function type_handler(t) {
           return ;
         }
     case /* EmptyHole */0 :
-    case /* Case */7 :
     case /* ApPalette */10 :
         return ;
     
@@ -303,6 +308,35 @@ function opseq_handler(opseq) {
     } else {
       return ;
     }
+  }
+}
+
+function case_handler(block, rules, uhtyp) {
+  var match = block_handler(block);
+  var match$1 = rule_handler(rules);
+  if (match !== undefined && match$1 !== undefined) {
+    return "match " + (match + (" with\n" + match$1));
+  }
+  
+}
+
+function rule_handler(rules) {
+  if (rules) {
+    var rule = rules[0];
+    var match = rule_handler(rules[1]);
+    if (match !== undefined) {
+      var match$1 = uhpat_translater(rule[0]);
+      var match$2 = block_handler(rule[1]);
+      if (match$1 !== undefined && match$2 !== undefined) {
+        return "  | " + (match$1 + (" -> " + (match$2 + (" \n" + match))));
+      } else {
+        return ;
+      }
+    } else {
+      return ;
+    }
+  } else {
+    return "";
   }
 }
 
@@ -435,6 +469,8 @@ exports.type_handler = type_handler;
 exports.lam_handler = lam_handler;
 exports.inj_handler = inj_handler;
 exports.opseq_handler = opseq_handler;
+exports.case_handler = case_handler;
+exports.rule_handler = rule_handler;
 exports.extraction_caller = extraction_caller;
 exports.example_let = example_let;
 exports.example_123 = example_123;

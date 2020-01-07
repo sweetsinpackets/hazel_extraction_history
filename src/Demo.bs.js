@@ -4,4 +4,10 @@
 
 console.log("Hello, BuckleScript and Reason!");
 
+console.log("Hello1 \n Hello2");
+
+console.log("  | \n");
+
+console.log("123456");
+
 /*  Not a pure module */
