@@ -240,12 +240,12 @@ function type_handler(t, level) {
     case /* Lam */5 :
         return lam_handler(t[0], t[1], t[2], t[3], level);
     case /* Inj */6 :
-        return inj_handler(t[0], t[1], t[2], level);
+        return inj_handler(t[0], t[2], level);
     case /* Case */7 :
         if (t[0]) {
           return ;
         } else {
-          return case_handler(t[1], t[2], t[3], level);
+          return case_handler(t[1], t[2], level);
         }
     case /* Parenthesized */8 :
         var match = block_handler(t[0], level);
@@ -291,7 +291,7 @@ function lam_handler(errstatus, uhpat, uhtyp, block, level) {
   }
 }
 
-function inj_handler(errstatus, injside, block, level) {
+function inj_handler(errstatus, block, level) {
   if (errstatus) {
     return ;
   } else {
@@ -319,7 +319,7 @@ function opseq_handler(opseq, level) {
   }
 }
 
-function case_handler(block, rules, uhtyp, level) {
+function case_handler(block, rules, level) {
   var match = block_handler(block, level);
   var match$1 = rule_handler(rules, level + 1 | 0);
   if (match !== undefined && match$1 !== undefined) {
@@ -348,7 +348,7 @@ function rule_handler(rules, level) {
   }
 }
 
-function extraction_caller(block) {
+function extraction_call(block) {
   var match = block_handler(block, 0);
   if (match !== undefined) {
     return match;
@@ -499,7 +499,7 @@ var parenthesized_example1 = /* Block */[
   parenthesized_example1_001
 ];
 
-console.log(extraction_caller(parenthesized_example1));
+console.log(extraction_call(parenthesized_example1));
 
 var example_let = /* Block */[
   /* :: */[
@@ -667,7 +667,7 @@ exports.inj_handler = inj_handler;
 exports.opseq_handler = opseq_handler;
 exports.case_handler = case_handler;
 exports.rule_handler = rule_handler;
-exports.extraction_caller = extraction_caller;
+exports.extraction_call = extraction_call;
 exports.example_let = example_let;
 exports.example_123 = example_123;
 exports.example_true = example_true;
