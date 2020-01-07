@@ -1,5 +1,12 @@
 open UHExp;
 
+// TODO: Add indent levels and pass into the handlers
+// level starts from 0, +1 means double space
+let rec indent_space = (~level : int) : string =>
+  if (level > 0) {"  " ++ indent_space(~level=level-1)}
+  else {""};
+
+// print_endline(indent_space(1) ++ "Hello")
 
 //==============================
 //  UHTyp.re
@@ -208,7 +215,7 @@ let uhexp_op_translater =(~op : UHExp.op) : string =>
 
 
 
-//TODO: complete the block and line part
+//TODO: complete the block and line part, add indent level indicater
 let rec block_handler=(~block : block) : option(string) => 
   switch(block) {
     | Block(lines, t) => type_handler(~t=t)
@@ -296,18 +303,17 @@ case_handler = (~block : block, ~rules : list(rule), ~uhtyp : option(UHTyp.t)) :
   // FIXME: still can let ocaml to do type inference, so just discard the uhtyp
   //        indeed, ocaml has nowhere to assign type for match structure
   switch (block_handler(~block=block), rule_handler(~rules=rules)) {
-    //FIXME: don't know whether to add ";" at end of case
-    //        may conflict with lines to create a ";;"
-    | (Some(b), Some(r)) => Some("match " ++ b ++ " with\n" ++ r)
+    //FIXME: Currently using () to handle nested case, but a little bit ugly for the first one
+    | (Some(b), Some(r)) => Some("(match " ++ b ++ " with" ++ r ++")")
     | _ => None
   }  
-  // expected to output "  | expr => expr \n"
+  // expected to output "\n  | expr => expr "
   // FIXME: the tabs is now fixed but not according to line
   and rule_handler = (~rules : list(rule)) : option(string) => switch(rules) {
     | [] => Some("")
     | [rule, ...rest] => switch(rule, rule_handler(~rules=rest)) {
       | (Rule(uhpat, block), Some(result)) => switch(uhpat_translater(~t=uhpat), block_handler(~block=block)) {
-        | (Some(t), Some(expr)) => Some("  | " ++ t ++ " -> " ++ expr ++ " \n" ++ result)
+        | (Some(t), Some(expr)) => Some("\n  | " ++ t ++ " -> " ++ expr ++ result)
         | _ => None
       }
       | _ => None
@@ -394,6 +400,30 @@ let example_lam2 = Block(
   )
 );
 
-//let case_example1 = Block()
+let case_example1 = Block(
+  [],
+  Case(NotInHole,
+      Block([], Var(NotInHole, NotInVarHole, "x")),
+      [Rule(ListNil(NotInHole), Block([], NumLit(NotInHole, 0))),
+       Rule(Var(NotInHole, NotInVarHole, "a"), Block([], BoolLit(NotInHole, true)))
+], Some(Unit))
+)
 
-print_endline(extraction_caller(~block=example_lam2));
+let case_example2 = Block(
+  [],
+  Case(NotInHole,
+      Block([], Var(NotInHole, NotInVarHole, "x")),
+      [Rule(ListNil(NotInHole), Block([], NumLit(NotInHole, 0))),
+       Rule(Var(NotInHole, NotInVarHole, "a"), Block([], BoolLit(NotInHole, true))),
+       Rule(Wild(NotInHole), Block(
+  [],
+  Case(NotInHole,
+      Block([], Var(NotInHole, NotInVarHole, "y")),
+      [Rule(ListNil(NotInHole), Block([], NumLit(NotInHole, 1))),
+       Rule(Var(NotInHole, NotInVarHole, "b"), Block([], BoolLit(NotInHole, true)))
+], Some(Unit))
+))
+], Some(Unit))
+)
+
+print_endline(extraction_caller(~block=case_example2));

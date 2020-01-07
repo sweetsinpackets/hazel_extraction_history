@@ -4,6 +4,14 @@
 var Block = require("bs-platform/lib/js/block.js");
 var Pervasives = require("bs-platform/lib/js/pervasives.js");
 
+function indent_space(level) {
+  if (level > 0) {
+    return "  " + indent_space(level - 1 | 0);
+  } else {
+    return "";
+  }
+}
+
 function uhtyp_translater(t) {
   if (typeof t === "number") {
     switch (t) {
@@ -315,7 +323,7 @@ function case_handler(block, rules, uhtyp) {
   var match = block_handler(block);
   var match$1 = rule_handler(rules);
   if (match !== undefined && match$1 !== undefined) {
-    return "match " + (match + (" with\n" + match$1));
+    return "(match " + (match + (" with" + (match$1 + ")")));
   }
   
 }
@@ -328,7 +336,7 @@ function rule_handler(rules) {
       var match$1 = uhpat_translater(rule[0]);
       var match$2 = block_handler(rule[1]);
       if (match$1 !== undefined && match$2 !== undefined) {
-        return "  | " + (match$1 + (" -> " + (match$2 + (" \n" + match))));
+        return "\n  | " + (match$1 + (" -> " + (match$2 + match)));
       } else {
         return ;
       }
@@ -349,40 +357,101 @@ function extraction_caller(block) {
   }
 }
 
-var example_lam2 = /* Block */[
+var case_example2 = /* Block */[
   /* [] */0,
-  /* Lam */Block.__(5, [
+  /* Case */Block.__(7, [
       /* NotInHole */0,
-      /* Var */Block.__(2, [
-          /* NotInHole */0,
-          /* NotInVarHole */0,
-          "x"
-        ]),
-      /* Num */2,
       /* Block */[
         /* [] */0,
-        /* Lam */Block.__(5, [
+        /* Var */Block.__(1, [
             /* NotInHole */0,
+            /* NotInVarHole */0,
+            "x"
+          ])
+      ],
+      /* :: */[
+        /* Rule */[
+          /* ListNil */Block.__(5, [/* NotInHole */0]),
+          /* Block */[
+            /* [] */0,
+            /* NumLit */Block.__(2, [
+                /* NotInHole */0,
+                0
+              ])
+          ]
+        ],
+        /* :: */[
+          /* Rule */[
             /* Var */Block.__(2, [
                 /* NotInHole */0,
                 /* NotInVarHole */0,
-                "y"
+                "a"
               ]),
-            /* Num */2,
             /* Block */[
               /* [] */0,
-              /* Var */Block.__(1, [
+              /* BoolLit */Block.__(3, [
                   /* NotInHole */0,
-                  /* NotInVarHole */0,
-                  "xy"
+                  true
                 ])
             ]
-          ])
-      ]
+          ],
+          /* :: */[
+            /* Rule */[
+              /* Wild */Block.__(1, [/* NotInHole */0]),
+              /* Block */[
+                /* [] */0,
+                /* Case */Block.__(7, [
+                    /* NotInHole */0,
+                    /* Block */[
+                      /* [] */0,
+                      /* Var */Block.__(1, [
+                          /* NotInHole */0,
+                          /* NotInVarHole */0,
+                          "y"
+                        ])
+                    ],
+                    /* :: */[
+                      /* Rule */[
+                        /* ListNil */Block.__(5, [/* NotInHole */0]),
+                        /* Block */[
+                          /* [] */0,
+                          /* NumLit */Block.__(2, [
+                              /* NotInHole */0,
+                              1
+                            ])
+                        ]
+                      ],
+                      /* :: */[
+                        /* Rule */[
+                          /* Var */Block.__(2, [
+                              /* NotInHole */0,
+                              /* NotInVarHole */0,
+                              "b"
+                            ]),
+                          /* Block */[
+                            /* [] */0,
+                            /* BoolLit */Block.__(3, [
+                                /* NotInHole */0,
+                                true
+                              ])
+                          ]
+                        ],
+                        /* [] */0
+                      ]
+                    ],
+                    /* Unit */1
+                  ])
+              ]
+            ],
+            /* [] */0
+          ]
+        ]
+      ],
+      /* Unit */1
     ])
 ];
 
-console.log(extraction_caller(example_lam2));
+console.log(extraction_caller(case_example2));
 
 var example_let = /* Block */[
   /* :: */[
@@ -457,6 +526,85 @@ var example_lam1 = /* Block */[
     ])
 ];
 
+var example_lam2 = /* Block */[
+  /* [] */0,
+  /* Lam */Block.__(5, [
+      /* NotInHole */0,
+      /* Var */Block.__(2, [
+          /* NotInHole */0,
+          /* NotInVarHole */0,
+          "x"
+        ]),
+      /* Num */2,
+      /* Block */[
+        /* [] */0,
+        /* Lam */Block.__(5, [
+            /* NotInHole */0,
+            /* Var */Block.__(2, [
+                /* NotInHole */0,
+                /* NotInVarHole */0,
+                "y"
+              ]),
+            /* Num */2,
+            /* Block */[
+              /* [] */0,
+              /* Var */Block.__(1, [
+                  /* NotInHole */0,
+                  /* NotInVarHole */0,
+                  "xy"
+                ])
+            ]
+          ])
+      ]
+    ])
+];
+
+var case_example1 = /* Block */[
+  /* [] */0,
+  /* Case */Block.__(7, [
+      /* NotInHole */0,
+      /* Block */[
+        /* [] */0,
+        /* Var */Block.__(1, [
+            /* NotInHole */0,
+            /* NotInVarHole */0,
+            "x"
+          ])
+      ],
+      /* :: */[
+        /* Rule */[
+          /* ListNil */Block.__(5, [/* NotInHole */0]),
+          /* Block */[
+            /* [] */0,
+            /* NumLit */Block.__(2, [
+                /* NotInHole */0,
+                0
+              ])
+          ]
+        ],
+        /* :: */[
+          /* Rule */[
+            /* Var */Block.__(2, [
+                /* NotInHole */0,
+                /* NotInVarHole */0,
+                "a"
+              ]),
+            /* Block */[
+              /* [] */0,
+              /* BoolLit */Block.__(3, [
+                  /* NotInHole */0,
+                  true
+                ])
+            ]
+          ],
+          /* [] */0
+        ]
+      ],
+      /* Unit */1
+    ])
+];
+
+exports.indent_space = indent_space;
 exports.uhtyp_translater = uhtyp_translater;
 exports.uhtyp_opseq_translater = uhtyp_opseq_translater;
 exports.uhtyp_op_translater = uhtyp_op_translater;
@@ -479,4 +627,6 @@ exports.example_emptyhole = example_emptyhole;
 exports.example_listnil = example_listnil;
 exports.example_lam1 = example_lam1;
 exports.example_lam2 = example_lam2;
+exports.case_example1 = case_example1;
+exports.case_example2 = case_example2;
 /*  Not a pure module */
