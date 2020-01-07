@@ -36,7 +36,7 @@ function uhtyp_translater(t) {
       case /* OpSeq */2 :
           var skel_t = t[0];
           if (skel_t.tag && !skel_t[0]) {
-            return opseq_handler(t[1]);
+            return uhtyp_opseq_translater(t[1]);
           } else {
             return ;
           }
@@ -45,9 +45,9 @@ function uhtyp_translater(t) {
   }
 }
 
-function opseq_handler(opseq) {
+function uhtyp_opseq_translater(opseq) {
   if (opseq.tag) {
-    var match = opseq_handler(opseq[0]);
+    var match = uhtyp_opseq_translater(opseq[0]);
     var match$1 = uhtyp_translater(opseq[2]);
     if (match !== undefined && match$1 !== undefined) {
       return match + (" " + (uhtyp_op_translater(opseq[1]) + (" " + match$1)));
@@ -123,7 +123,7 @@ function uhpat_translater(_t) {
       case /* OpSeq */7 :
           var skel_t = t[0];
           if (skel_t.tag && !skel_t[0]) {
-            return uhpat_opseq_handler(t[1]);
+            return uhpat_opseq_translater(t[1]);
           } else {
             return ;
           }
@@ -139,9 +139,9 @@ function uhpat_translater(_t) {
   };
 }
 
-function uhpat_opseq_handler(opseq) {
+function uhpat_opseq_translater(opseq) {
   if (opseq.tag) {
-    var match = uhpat_opseq_handler(opseq[0]);
+    var match = uhpat_opseq_translater(opseq[0]);
     var match$1 = uhpat_translater(opseq[2]);
     if (match !== undefined && match$1 !== undefined) {
       return match + (" " + (uhpat_op_translater(opseq[1]) + (" " + match$1)));
@@ -171,14 +171,40 @@ function uhpat_op_translater(op) {
   }
 }
 
+function uhexp_op_translater(op) {
+  switch (op) {
+    case /* Space */0 :
+        return " ";
+    case /* Plus */1 :
+        return "+";
+    case /* Minus */2 :
+        return "-";
+    case /* Times */3 :
+        return "*";
+    case /* LessThan */4 :
+        return "<";
+    case /* GreaterThan */5 :
+        return ">";
+    case /* Equals */6 :
+        return "==";
+    case /* Comma */7 :
+        return ", ";
+    case /* Cons */8 :
+        return "::";
+    case /* And */9 :
+        return "&&";
+    case /* Or */10 :
+        return "||";
+    
+  }
+}
+
 function block_handler(block) {
   return type_handler(block[1]);
 }
 
 function type_handler(t) {
   switch (t.tag | 0) {
-    case /* EmptyHole */0 :
-        return ;
     case /* Var */1 :
         if (t[0] || t[1]) {
           return ;
@@ -205,8 +231,27 @@ function type_handler(t) {
         }
     case /* Lam */5 :
         return lam_handler(t[0], t[1], t[2], t[3]);
-    default:
-      return ;
+    case /* Inj */6 :
+        return inj_handler(t[0], t[1], t[2]);
+    case /* Parenthesized */8 :
+        var match = block_handler(t[0]);
+        if (match !== undefined) {
+          return "(" + (match + ")");
+        } else {
+          return ;
+        }
+    case /* OpSeq */9 :
+        var skel_t = t[0];
+        if (skel_t.tag && !skel_t[0]) {
+          return opseq_handler(t[1]);
+        } else {
+          return ;
+        }
+    case /* EmptyHole */0 :
+    case /* Case */7 :
+    case /* ApPalette */10 :
+        return ;
+    
   }
 }
 
@@ -227,6 +272,34 @@ function lam_handler(errstatus, uhpat, uhtyp, block) {
     var match$4 = block_handler(block);
     if (match$3 !== undefined && match$4 !== undefined) {
       return "fun " + (match$3 + (" -> " + match$4));
+    } else {
+      return ;
+    }
+  }
+}
+
+function inj_handler(errstatus, injside, block) {
+  if (errstatus) {
+    return ;
+  } else {
+    return block_handler(block);
+  }
+}
+
+function opseq_handler(opseq) {
+  if (opseq.tag) {
+    var match = opseq_handler(opseq[0]);
+    var match$1 = type_handler(opseq[2]);
+    if (match !== undefined && match$1 !== undefined) {
+      return match + (" " + (uhexp_op_translater(opseq[1]) + (" " + match$1)));
+    } else {
+      return ;
+    }
+  } else {
+    var match$2 = type_handler(opseq[0]);
+    var match$3 = type_handler(opseq[2]);
+    if (match$2 !== undefined && match$3 !== undefined) {
+      return match$2 + (" " + (uhexp_op_translater(opseq[1]) + (" " + match$3)));
     } else {
       return ;
     }
@@ -351,14 +424,17 @@ var example_lam1 = /* Block */[
 ];
 
 exports.uhtyp_translater = uhtyp_translater;
-exports.opseq_handler = opseq_handler;
+exports.uhtyp_opseq_translater = uhtyp_opseq_translater;
 exports.uhtyp_op_translater = uhtyp_op_translater;
 exports.uhpat_translater = uhpat_translater;
-exports.uhpat_opseq_handler = uhpat_opseq_handler;
+exports.uhpat_opseq_translater = uhpat_opseq_translater;
 exports.uhpat_op_translater = uhpat_op_translater;
+exports.uhexp_op_translater = uhexp_op_translater;
 exports.block_handler = block_handler;
 exports.type_handler = type_handler;
 exports.lam_handler = lam_handler;
+exports.inj_handler = inj_handler;
+exports.opseq_handler = opseq_handler;
 exports.extraction_caller = extraction_caller;
 exports.example_let = example_let;
 exports.example_123 = example_123;

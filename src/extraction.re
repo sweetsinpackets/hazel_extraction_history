@@ -1,13 +1,6 @@
 open UHExp;
 
 
-
-//===============================
-//working functions
-//TODO: first write all the "t" handlers, 
-//      then line recursive
-//===============================
-
 //==============================
 //  UHTyp.re
 //==============================
@@ -34,21 +27,22 @@ let rec uhtyp_translater = (~t : UHTyp.t) : option(string) =>
       | Some(s) => Some("(" ++ s ++ ")")
     }
     | OpSeq(skel_t, opseq) => switch(skel_t){
-      | BinOp(NotInHole, _, _, _) => opseq_handler(~opseq=opseq)
+      // Since skeleton is consistant with opseq, decline skel_t
+      | BinOp(NotInHole, _, _, _) => uhtyp_opseq_translater(~opseq=opseq)
       | _ => None
     }
   }
-  and opseq_handler = (~opseq) : option(string) => switch(opseq){
-        | ExpOpExp(tm1, op, tm2) => switch((uhtyp_translater(tm1), uhtyp_translater(tm2)))
-        {
+and uhtyp_opseq_translater = (~opseq) : option(string) => switch(opseq){
+        | ExpOpExp(tm1, op, tm2) => switch((uhtyp_translater(tm1), uhtyp_translater(tm2))){
           | (Some(a), Some(b)) => Some(a ++ " " ++ uhtyp_op_translater(op) ++ " " ++ b)
           | _ => None
         }
-        | SeqOpExp(seq, op, tm) => switch(opseq_handler(~opseq=seq), uhtyp_translater(tm)) {
+        | SeqOpExp(seq, op, tm) => switch(uhtyp_opseq_translater(~opseq=seq), uhtyp_translater(tm)) {
           | (Some(a), Some(b)) => Some(a ++ " " ++ uhtyp_op_translater(op) ++ " " ++ b)
           | _ => None
         }
-  } and uhtyp_op_translater = (~op : UHTyp.op) : string =>
+  } 
+and uhtyp_op_translater = (~op : UHTyp.op) : string =>
   switch(op) {
     | Arrow => " -> "
     | Prod => " * " //int*int in ocaml
@@ -73,17 +67,16 @@ let rec uhtyp_translater = (~t : UHTyp.t) : option(string) =>
 //       | Some(s) => Some("(" ++ s ++ ")")
 //     }
 //     | OpSeq(skel_t, opseq) => switch(skel_t){
-//       | BinOp(NotInHole, _, _, _) => opseq_handler(~opseq=opseq)
+//       | BinOp(NotInHole, _, _, _) => uhtyp_opseq_translater(~opseq=opseq)
 //       | _ => None
 //     }
 //   }
-//   and opseq_handler = (~opseq) : option(string) => switch(opseq){
-//         | ExpOpExp(tm1, op, tm2) => switch((uhtyp_translater(tm1), uhtyp_translater(tm2)))
-//         {
+//   and uhtyp_opseq_translater = (~opseq) : option(string) => switch(opseq){
+//         | ExpOpExp(tm1, op, tm2) => switch((uhtyp_translater(tm1), uhtyp_translater(tm2))){
 //           | (Some(a), Some(b)) => Some(a ++ " " ++ uhtyp_op_translater(op) ++ " " ++ b)
 //           | _ => None
 //         }
-//         | SeqOpExp(seq, op, tm) => switch(opseq_handler(~opseq=seq), uhtyp_translater(tm)) {
+//         | SeqOpExp(seq, op, tm) => switch(uhtyp_opseq_translater(~opseq=seq), uhtyp_translater(tm)) {
 //           | (Some(a), Some(b)) => Some(a ++ " " ++ uhtyp_op_translater(op) ++ " " ++ b)
 //           | _ => None
 //         }
@@ -157,16 +150,15 @@ let rec uhpat_translater = (~t : UHPat.t) : option(string) =>
       | _ => None
     }
     | OpSeq(skel_t, opseq) => switch(skel_t){
-      | BinOp(NotInHole, _, _, _) => uhpat_opseq_handler(~opseq=opseq)
+      | BinOp(NotInHole, _, _, _) => uhpat_opseq_translater(~opseq=opseq)
       | _ => None
     }
-  } and uhpat_opseq_handler = (~opseq) : option(string) => switch(opseq){
-        | ExpOpExp(tm1, op, tm2) => switch((uhpat_translater(tm1), uhpat_translater(tm2)))
-        {
+  } and uhpat_opseq_translater = (~opseq) : option(string) => switch(opseq){
+        | ExpOpExp(tm1, op, tm2) => switch((uhpat_translater(tm1), uhpat_translater(tm2))){
           | (Some(a), Some(b)) => Some(a ++ " " ++ uhpat_op_translater(op) ++ " " ++ b)
           | _ => None
         }
-        | SeqOpExp(seq, op, tm) => switch(uhpat_opseq_handler(~opseq=seq), uhpat_translater(tm)) {
+        | SeqOpExp(seq, op, tm) => switch(uhpat_opseq_translater(~opseq=seq), uhpat_translater(tm)) {
           | (Some(a), Some(b)) => Some(a ++ " " ++ uhpat_op_translater(op) ++ " " ++ b)
           | _ => None
         }
@@ -198,6 +190,22 @@ let rec uhpat_translater = (~t : UHPat.t) : option(string) =>
 
 // using "fun list(_ : type) -> expr" as lambda expression
 // nested is ok, fun x -> fun y -> ... -> expr
+
+let uhexp_op_translater =(~op : UHExp.op) : string =>
+  switch(op) {
+    | Space => " "
+    | Plus => "+"
+    | Minus => "-"
+    | Times => "*"
+    | LessThan => "<"
+    | GreaterThan => ">"
+    | Equals => "=="
+    | Comma => ", "
+    | Cons => "::"
+    | And => "&&"
+    | Or => "||"
+  }
+
 
 
 //TODO: complete the block and line part
@@ -232,6 +240,16 @@ type_handler = (~t : t) : option(string) =>
       | None => None
       | Some(s) => Some("(" ++ s ++ ")")
     }
+    | Inj(a, b, c) => inj_handler(~errstatus=a, ~injside=b, ~block=c)
+    | OpSeq(skel_t, opseq) => switch(skel_t) {
+      //since invariant of skel_t and opseq, decline skel_t
+      | BinOp(NotInHole, _, _, _) => opseq_handler(~opseq=opseq)
+      | _ => None
+    }
+    | Case(a, b, c, d) => switch(a) {
+      | NotInHole => case_handler()
+      | _ => None
+    }
     | _ => None
   }
 and   // Lam helper function
@@ -253,8 +271,32 @@ lam_handler = (~errstatus : ErrStatus.t, ~uhpat : UHPat.t, ~uhtyp : option(UHTyp
   }
 and
 inj_handler = (~errstatus : ErrStatus.t, ~injside : InjSide.t, ~block : block) : option(string) =>
-  //TODO:
-
+  //FIXME: Another injection issue
+  switch(errstatus) {
+    | NotInHole => block_handler(block)
+    | _ => None
+  }
+and
+opseq_handler = (~opseq : UHExp.opseq) : option(string) => switch(opseq){
+    | ExpOpExp(tm1, op, tm2) => switch((type_handler(tm1), type_handler(tm2)))
+    {
+      | (Some(a), Some(b)) => Some(a ++ " " ++ uhexp_op_translater(op) ++ " " ++ b)
+      | _ => None
+    }
+    | SeqOpExp(seq, op, tm) => switch(opseq_handler(~opseq=seq), type_handler(tm)) {
+      | (Some(a), Some(b)) => Some(a ++ " " ++ uhexp_op_translater(op) ++ " " ++ b)
+      | _ => None
+    }
+  }
+and //put errstatus check into the main function
+case_handler = (~block : block, ~rules : list(rule), ~uhtyp : option(UHTyp.t)) : option(string) =>
+  // block is the item to switch, rules are patterns, uhtyp is the last given type
+  // case a | 1 => true | 2 => false end : bool
+  // FIXME: still can let ocaml to do type inference, so just discard the uhtyp
+  //        indeed, ocaml has nowhere to assign type for match structure
+  switch(rules) {
+    | 
+  };
 
 //=============================
 
