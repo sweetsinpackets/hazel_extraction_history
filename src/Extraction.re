@@ -1,6 +1,6 @@
 open UHExp;
 
-// TODO: Add indent levels and pass into the handlers
+// Add indent levels and pass into the handlers
 // level starts from 0, +1 means double space
 let rec indent_space = (~level : int) : string =>
   if (level > 0) {"  " ++ indent_space(~level=level-1)}
@@ -272,7 +272,7 @@ lam_handler = (~errstatus : ErrStatus.t, ~uhpat : UHPat.t, ~uhtyp : option(UHTyp
     | (NotInHole, pat, None) => switch(uhpat_translater(pat), block_handler(~block=block, ~level=level+1)) {
       //here we don't need indent because it's follow some expression like "="
       //but maybe writting it in a new line needs
-      //TODO: currently insert an () to protect codes, figure out whether can remove
+      //FIXME: currently insert an () to protect codes, figure out whether can remove
       | (Some(s), Some(b)) => Some("(fun " ++ s ++ " -> " ++ b ++ ")") 
       | _ => None
     }
