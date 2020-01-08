@@ -42,19 +42,24 @@ function uhtyp_translater(t) {
   } else {
     switch (t.tag | 0) {
       case /* Parenthesized */0 :
-          var match = uhtyp_translater(t[0]);
-          if (match !== undefined) {
-            return "(" + (match + ")");
-          } else {
-            return ;
-          }
+          return option_string_concat(/* :: */[
+                      "(",
+                      /* :: */[
+                        uhtyp_translater(t[0]),
+                        /* :: */[
+                          ")",
+                          /* [] */0
+                        ]
+                      ]
+                    ]);
       case /* List */1 :
-          var match$1 = uhtyp_translater(t[0]);
-          if (match$1 !== undefined) {
-            return match$1 + " list";
-          } else {
-            return ;
-          }
+          return option_string_concat(/* :: */[
+                      uhtyp_translater(t[0]),
+                      /* :: */[
+                        " list",
+                        /* [] */0
+                      ]
+                    ]);
       case /* OpSeq */2 :
           var skel_t = t[0];
           if (skel_t.tag && !skel_t[0]) {
@@ -69,21 +74,39 @@ function uhtyp_translater(t) {
 
 function uhtyp_opseq_translater(opseq) {
   if (opseq.tag) {
-    var match = uhtyp_opseq_translater(opseq[0]);
-    var match$1 = uhtyp_translater(opseq[2]);
-    if (match !== undefined && match$1 !== undefined) {
-      return match + (" " + (uhtyp_op_translater(opseq[1]) + (" " + match$1)));
-    } else {
-      return ;
-    }
+    return option_string_concat(/* :: */[
+                uhtyp_opseq_translater(opseq[0]),
+                /* :: */[
+                  " ",
+                  /* :: */[
+                    uhtyp_op_translater(opseq[1]),
+                    /* :: */[
+                      " ",
+                      /* :: */[
+                        uhtyp_translater(opseq[2]),
+                        /* [] */0
+                      ]
+                    ]
+                  ]
+                ]
+              ]);
   } else {
-    var match$2 = uhtyp_translater(opseq[0]);
-    var match$3 = uhtyp_translater(opseq[2]);
-    if (match$2 !== undefined && match$3 !== undefined) {
-      return match$2 + (" " + (uhtyp_op_translater(opseq[1]) + (" " + match$3)));
-    } else {
-      return ;
-    }
+    return option_string_concat(/* :: */[
+                uhtyp_translater(opseq[0]),
+                /* :: */[
+                  " ",
+                  /* :: */[
+                    uhtyp_op_translater(opseq[1]),
+                    /* :: */[
+                      " ",
+                      /* :: */[
+                        uhtyp_translater(opseq[2]),
+                        /* [] */0
+                      ]
+                    ]
+                  ]
+                ]
+              ]);
   }
 }
 
@@ -163,21 +186,39 @@ function uhpat_translater(_t) {
 
 function uhpat_opseq_translater(opseq) {
   if (opseq.tag) {
-    var match = uhpat_opseq_translater(opseq[0]);
-    var match$1 = uhpat_translater(opseq[2]);
-    if (match !== undefined && match$1 !== undefined) {
-      return match + (" " + (uhpat_op_translater(opseq[1]) + (" " + match$1)));
-    } else {
-      return ;
-    }
+    return option_string_concat(/* :: */[
+                uhpat_opseq_translater(opseq[0]),
+                /* :: */[
+                  " ",
+                  /* :: */[
+                    uhpat_op_translater(opseq[1]),
+                    /* :: */[
+                      " ",
+                      /* :: */[
+                        uhpat_translater(opseq[2]),
+                        /* [] */0
+                      ]
+                    ]
+                  ]
+                ]
+              ]);
   } else {
-    var match$2 = uhpat_translater(opseq[0]);
-    var match$3 = uhpat_translater(opseq[2]);
-    if (match$2 !== undefined && match$3 !== undefined) {
-      return match$2 + (" " + (uhpat_op_translater(opseq[1]) + (" " + match$3)));
-    } else {
-      return ;
-    }
+    return option_string_concat(/* :: */[
+                uhpat_translater(opseq[0]),
+                /* :: */[
+                  " ",
+                  /* :: */[
+                    uhpat_op_translater(opseq[1]),
+                    /* :: */[
+                      " ",
+                      /* :: */[
+                        uhpat_translater(opseq[2]),
+                        /* [] */0
+                      ]
+                    ]
+                  ]
+                ]
+              ]);
   }
 }
 
@@ -268,12 +309,16 @@ function type_handler(t, level) {
           return case_handler(t[1], t[2], t[3], level);
         }
     case /* Parenthesized */8 :
-        var match = block_handler(t[0], level);
-        if (match !== undefined) {
-          return "(" + (match + ")");
-        } else {
-          return ;
-        }
+        return option_string_concat(/* :: */[
+                    "(",
+                    /* :: */[
+                      block_handler(t[0], level),
+                      /* :: */[
+                        ")",
+                        /* [] */0
+                      ]
+                    ]
+                  ]);
     case /* OpSeq */9 :
         var skel_t = t[0];
         if (skel_t.tag && !skel_t[0]) {
@@ -292,22 +337,45 @@ function lam_handler(errstatus, uhpat, uhtyp, block, level) {
   if (errstatus) {
     return ;
   } else if (uhtyp !== undefined) {
-    var match = uhpat_translater(uhpat);
-    var match$1 = uhtyp_translater(uhtyp);
-    var match$2 = block_handler(block, level + 1 | 0);
-    if (match !== undefined && match$1 !== undefined && match$2 !== undefined) {
-      return "(fun " + (match + (":" + (match$1 + (" -> " + (match$2 + ")")))));
-    } else {
-      return ;
-    }
+    return option_string_concat(/* :: */[
+                "(fun ",
+                /* :: */[
+                  uhpat_translater(uhpat),
+                  /* :: */[
+                    " : ",
+                    /* :: */[
+                      uhtyp_translater(uhtyp),
+                      /* :: */[
+                        " -> ",
+                        /* :: */[
+                          block_handler(block, level + 1 | 0),
+                          /* :: */[
+                            ")",
+                            /* [] */0
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]);
   } else {
-    var match$3 = uhpat_translater(uhpat);
-    var match$4 = block_handler(block, level + 1 | 0);
-    if (match$3 !== undefined && match$4 !== undefined) {
-      return "(fun " + (match$3 + (" -> " + (match$4 + ")")));
-    } else {
-      return ;
-    }
+    return option_string_concat(/* :: */[
+                "(fun ",
+                /* :: */[
+                  uhpat_translater(uhpat),
+                  /* :: */[
+                    " -> ",
+                    /* :: */[
+                      block_handler(block, level + 1 | 0),
+                      /* :: */[
+                        ")",
+                        /* [] */0
+                      ]
+                    ]
+                  ]
+                ]
+              ]);
   }
 }
 
