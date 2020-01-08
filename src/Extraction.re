@@ -1,6 +1,6 @@
 open UHExp;
 
-// TODO: Discard the "?" holes in the first step
+// Discard the "?" holes in the first step
 // FIXME: Then carefully consider it
 
 // TODO: Use auto-formatter in ocaml to deal with unnecessary indent and ()s
@@ -12,6 +12,17 @@ let rec indent_space = (~level: int): string =>
     "  " ++ indent_space(~level=level - 1);
   } else {
     "";
+  };
+
+// FIXME:TODO: use it to simplify 
+// option_string_concat([s1, Some(constant)])
+let rec option_string_concat = (~strs : list( option(string))) : option(string) =>
+  switch (strs) {
+    | [] => Some("")
+    | [a, ...rest] => switch(a, option_string_concat(~strs=rest)) {
+      | (Some(s1), Some(s2)) => Some(s1 ++ s2)
+      | _ => None
+    }
   };
 
 //print_endline(indent_space(2) ++ "Hello")
@@ -247,7 +258,7 @@ let uhexp_op_translater = (~op: UHExp.op): string =>
 //      In each recursive call, we will proceed indent level by 1
 let rec block_handler = (~block: block, ~level: int): option(string) =>
   switch (block) {
-  | Block(_lines, t) => type_handler(~t, ~level)
+  | Block(lines, t) => option_string_concat(~strs = [lines_handler(~lines=lines, ~level=level), type_handler(~t=t, ~level=level)])
   }
 //The t part
 and type_handler = (~t: t, ~level: int): option(string) =>
@@ -280,9 +291,9 @@ and type_handler = (~t: t, ~level: int): option(string) =>
   | Lam(a, b, c, d) =>
     lam_handler(~errstatus=a, ~uhpat=b, ~uhtyp=c, ~block=d, ~level)
   | Inj(a, _b, c) => inj_handler(~errstatus=a, ~block=c, ~level)
-  | Case(a, b, c, _d) =>
+  | Case(a, b, c, d) =>
     switch (a) {
-    | NotInHole => case_handler(~block=b, ~rules=c, ~level)
+    | NotInHole => case_handler(~block=b, ~rules=c, ~uhtyp = d, ~level)
     | _ => None
     }
   | Parenthesized(b) =>
@@ -296,7 +307,7 @@ and type_handler = (~t: t, ~level: int): option(string) =>
     | BinOp(NotInHole, _, _, _) => opseq_handler(~opseq, ~level)
     | _ => None
     }
-  //TODO: ApPalette (Discard it as exceptions)
+  //TODO: ApPalette (Discard it as exceptions, since it isn't implemented now)
   | _ => None
   }
 // Lam helper function
@@ -372,7 +383,7 @@ and case_handler =
     (
       ~block: block,
       ~rules: list(rule),
-      //      ~uhtyp: option(UHTyp.t),  //due to currently unuse
+      ~uhtyp: option(UHTyp.t),  //due to currently unuse
       ~level: int,
     )
     : option(string) =>
@@ -380,15 +391,21 @@ and case_handler =
   // case a | 1 => true | 2 => false end : bool
   // FIXME: still can let ocaml to do type inference, so just discard the uhtyp
   //        indeed, ocaml has nowhere to assign type for match structure
-  // FIXME: Deal with the "?" holes, let x:Num = case... don't need a type at the end
+  //  Deal with the "?" holes, let x:Num = case... don't need a type at the end
   //      whether if the "?" hole itself is an incomplete expression with Holes
   switch (
     block_handler(~block, ~level),
     rule_handler(~rules, ~level=level + 1),
+    uhtyp
   ) {
   //FIXME: Currently using () to handle nested case, but a little bit ugly for the first one
-  | (Some(b), Some(r)) => Some("(match " ++ b ++ " with" ++ r ++ ")")
-  // match should be after some expression, so don't indent
+  | (Some(b), Some(r), None) => Some("(match " ++ b ++ " with" ++ r ++ ")")
+  | (Some(b), Some(r), Some(typ)) => switch(uhtyp_translater(~t=typ)) {
+    | None => None
+    | Some(t) => Some("((match " ++ b ++ " with" ++ r ++ ") : " ++ t ++ ")")
+  }
+  // if uhtyp is not None, but translater result is None, it means there's incomplete hole, can't inference
+  // FIXME: This is only a tricky method, so it isn't formally good
   | _ => None
   }
 // expected to output "\n  | expr => expr "
@@ -417,7 +434,40 @@ and rule_handler = (~rules: list(rule), ~level: int): option(string) =>
       }
     | _ => None
     }
+  }
+and lines_handler=(~lines : list(UHExp.line), ~level : int) : option(string) => 
+  switch(lines) {
+    | [] => Some("")
+    | [line, ...rest] => switch(line_handler(~line=line, ~level=level), lines_handler(~lines=rest, ~level=level)) {
+      | (Some(l), Some(r)) => Some(l ++ r)
+      | _ => None
+    }
+  }
+and
+// we expect the every line will return a "\n" to end the line
+line_handler=(~line : UHExp.line, ~level : int) : option(string) =>
+  switch(line) {
+    | ExpLine(t) => option_string_concat(~strs=[Some(indent_space(~level=level)), type_handler(~t=t, ~level=level), Some("\n")])
+    | EmptyLine => Some("\n")
+    //let uhpat (: uhtyp) = block
+    | LetLine(uhpat, uhtyp, block) => switch(uhtyp) {
+      | None => option_string_concat(~strs = [Some(indent_space(~level=level)), 
+                Some("let "), 
+                uhpat_translater(~t=uhpat),
+                Some(" = "),
+                block_handler(~block=block, ~level=level+1),
+                Some("in\n")])
+      | Some(t) => option_string_concat(~strs = [Some(indent_space(~level=level)), 
+                Some("let "), 
+                uhpat_translater(~t=uhpat),
+                Some(" : "),
+                uhtyp_translater(~t=t),
+                Some(" = "),
+                block_handler(~block=block, ~level=level+1),
+                Some("in\n")])
+    }
   };
+
 
 //=============================
 

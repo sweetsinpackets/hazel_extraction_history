@@ -12,6 +12,20 @@ function indent_space(level) {
   }
 }
 
+function option_string_concat(strs) {
+  if (strs) {
+    var a = strs[0];
+    var match = option_string_concat(strs[1]);
+    if (a !== undefined && match !== undefined) {
+      return a + match;
+    } else {
+      return ;
+    }
+  } else {
+    return "";
+  }
+}
+
 function uhtyp_translater(t) {
   if (typeof t === "number") {
     switch (t) {
@@ -208,7 +222,13 @@ function uhexp_op_translater(op) {
 }
 
 function block_handler(block, level) {
-  return type_handler(block[1], level);
+  return option_string_concat(/* :: */[
+              lines_handler(block[0], level),
+              /* :: */[
+                type_handler(block[1], level),
+                /* [] */0
+              ]
+            ]);
 }
 
 function type_handler(t, level) {
@@ -245,7 +265,7 @@ function type_handler(t, level) {
         if (t[0]) {
           return ;
         } else {
-          return case_handler(t[1], t[2], level);
+          return case_handler(t[1], t[2], t[3], level);
         }
     case /* Parenthesized */8 :
         var match = block_handler(t[0], level);
@@ -319,11 +339,22 @@ function opseq_handler(opseq, level) {
   }
 }
 
-function case_handler(block, rules, level) {
+function case_handler(block, rules, uhtyp, level) {
   var match = block_handler(block, level);
   var match$1 = rule_handler(rules, level + 1 | 0);
   if (match !== undefined && match$1 !== undefined) {
-    return "(match " + (match + (" with" + (match$1 + ")")));
+    var r = match$1;
+    var b = match;
+    if (uhtyp !== undefined) {
+      var match$2 = uhtyp_translater(uhtyp);
+      if (match$2 !== undefined) {
+        return "((match " + (b + (" with" + (r + (") : " + (match$2 + ")")))));
+      } else {
+        return ;
+      }
+    } else {
+      return "(match " + (b + (" with" + (r + ")")));
+    }
   }
   
 }
@@ -345,6 +376,88 @@ function rule_handler(rules, level) {
     }
   } else {
     return "";
+  }
+}
+
+function lines_handler(lines, level) {
+  if (lines) {
+    var match = line_handler(lines[0], level);
+    var match$1 = lines_handler(lines[1], level);
+    if (match !== undefined && match$1 !== undefined) {
+      return match + match$1;
+    } else {
+      return ;
+    }
+  } else {
+    return "";
+  }
+}
+
+function line_handler(line, level) {
+  if (typeof line === "number") {
+    return "\n";
+  } else if (line.tag) {
+    var block = line[2];
+    var uhtyp = line[1];
+    var uhpat = line[0];
+    if (uhtyp !== undefined) {
+      return option_string_concat(/* :: */[
+                  indent_space(level),
+                  /* :: */[
+                    "let ",
+                    /* :: */[
+                      uhpat_translater(uhpat),
+                      /* :: */[
+                        " : ",
+                        /* :: */[
+                          uhtyp_translater(uhtyp),
+                          /* :: */[
+                            " = ",
+                            /* :: */[
+                              block_handler(block, level + 1 | 0),
+                              /* :: */[
+                                "in\n",
+                                /* [] */0
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]);
+    } else {
+      return option_string_concat(/* :: */[
+                  indent_space(level),
+                  /* :: */[
+                    "let ",
+                    /* :: */[
+                      uhpat_translater(uhpat),
+                      /* :: */[
+                        " = ",
+                        /* :: */[
+                          block_handler(block, level + 1 | 0),
+                          /* :: */[
+                            "in\n",
+                            /* [] */0
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]);
+    }
+  } else {
+    return option_string_concat(/* :: */[
+                indent_space(level),
+                /* :: */[
+                  type_handler(line[0], level),
+                  /* :: */[
+                    "\n",
+                    /* [] */0
+                  ]
+                ]
+              ]);
   }
 }
 
@@ -653,6 +766,7 @@ var case_example1 = /* Block */[
 ];
 
 exports.indent_space = indent_space;
+exports.option_string_concat = option_string_concat;
 exports.uhtyp_translater = uhtyp_translater;
 exports.uhtyp_opseq_translater = uhtyp_opseq_translater;
 exports.uhtyp_op_translater = uhtyp_op_translater;
@@ -667,6 +781,8 @@ exports.inj_handler = inj_handler;
 exports.opseq_handler = opseq_handler;
 exports.case_handler = case_handler;
 exports.rule_handler = rule_handler;
+exports.lines_handler = lines_handler;
+exports.line_handler = line_handler;
 exports.extraction_call = extraction_call;
 exports.example_let = example_let;
 exports.example_123 = example_123;
