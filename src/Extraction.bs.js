@@ -402,21 +402,21 @@ function line_handler(line, level) {
     var uhpat = line[0];
     if (uhtyp !== undefined) {
       return option_string_concat(/* :: */[
-                  indent_space(level),
+                  "let ",
                   /* :: */[
-                    "let ",
+                    uhpat_translater(uhpat),
                     /* :: */[
-                      uhpat_translater(uhpat),
+                      " : ",
                       /* :: */[
-                        " : ",
+                        uhtyp_translater(uhtyp),
                         /* :: */[
-                          uhtyp_translater(uhtyp),
+                          " = ",
                           /* :: */[
-                            " = ",
+                            block_handler(block, level + 1 | 0),
                             /* :: */[
-                              block_handler(block, level + 1 | 0),
+                              " in\n",
                               /* :: */[
-                                "in\n",
+                                indent_space(level),
                                 /* [] */0
                               ]
                             ]
@@ -428,17 +428,17 @@ function line_handler(line, level) {
                 ]);
     } else {
       return option_string_concat(/* :: */[
-                  indent_space(level),
+                  "let ",
                   /* :: */[
-                    "let ",
+                    uhpat_translater(uhpat),
                     /* :: */[
-                      uhpat_translater(uhpat),
+                      " = ",
                       /* :: */[
-                        " = ",
+                        block_handler(block, level + 1 | 0),
                         /* :: */[
-                          block_handler(block, level + 1 | 0),
+                          " in\n",
                           /* :: */[
-                            "in\n",
+                            indent_space(level),
                             /* [] */0
                           ]
                         ]
@@ -449,11 +449,11 @@ function line_handler(line, level) {
     }
   } else {
     return option_string_concat(/* :: */[
-                indent_space(level),
+                type_handler(line[0], level),
                 /* :: */[
-                  type_handler(line[0], level),
+                  "\n",
                   /* :: */[
-                    "\n",
+                    indent_space(level),
                     /* [] */0
                   ]
                 ]
