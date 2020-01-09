@@ -77,16 +77,10 @@ function uhtyp_opseq_translater(opseq) {
     return option_string_concat(/* :: */[
                 uhtyp_opseq_translater(opseq[0]),
                 /* :: */[
-                  " ",
+                  uhtyp_op_translater(opseq[1]),
                   /* :: */[
-                    uhtyp_op_translater(opseq[1]),
-                    /* :: */[
-                      " ",
-                      /* :: */[
-                        uhtyp_translater(opseq[2]),
-                        /* [] */0
-                      ]
-                    ]
+                    uhtyp_translater(opseq[2]),
+                    /* [] */0
                   ]
                 ]
               ]);
@@ -94,16 +88,10 @@ function uhtyp_opseq_translater(opseq) {
     return option_string_concat(/* :: */[
                 uhtyp_translater(opseq[0]),
                 /* :: */[
-                  " ",
+                  uhtyp_op_translater(opseq[1]),
                   /* :: */[
-                    uhtyp_op_translater(opseq[1]),
-                    /* :: */[
-                      " ",
-                      /* :: */[
-                        uhtyp_translater(opseq[2]),
-                        /* [] */0
-                      ]
-                    ]
+                    uhtyp_translater(opseq[2]),
+                    /* [] */0
                   ]
                 ]
               ]);
@@ -189,16 +177,10 @@ function uhpat_opseq_translater(opseq) {
     return option_string_concat(/* :: */[
                 uhpat_opseq_translater(opseq[0]),
                 /* :: */[
-                  " ",
+                  uhpat_op_translater(opseq[1]),
                   /* :: */[
-                    uhpat_op_translater(opseq[1]),
-                    /* :: */[
-                      " ",
-                      /* :: */[
-                        uhpat_translater(opseq[2]),
-                        /* [] */0
-                      ]
-                    ]
+                    uhpat_translater(opseq[2]),
+                    /* [] */0
                   ]
                 ]
               ]);
@@ -206,16 +188,10 @@ function uhpat_opseq_translater(opseq) {
     return option_string_concat(/* :: */[
                 uhpat_translater(opseq[0]),
                 /* :: */[
-                  " ",
+                  uhpat_op_translater(opseq[1]),
                   /* :: */[
-                    uhpat_op_translater(opseq[1]),
-                    /* :: */[
-                      " ",
-                      /* :: */[
-                        uhpat_translater(opseq[2]),
-                        /* [] */0
-                      ]
-                    ]
+                    uhpat_translater(opseq[2]),
+                    /* [] */0
                   ]
                 ]
               ]);
@@ -389,59 +365,99 @@ function inj_handler(errstatus, block, level) {
 
 function opseq_handler(opseq, level) {
   if (opseq.tag) {
-    var match = opseq_handler(opseq[0], level + 1 | 0);
-    var match$1 = type_handler(opseq[2], level + 1 | 0);
-    if (match !== undefined && match$1 !== undefined) {
-      return match + (" " + (uhexp_op_translater(opseq[1]) + (" " + match$1)));
-    } else {
-      return ;
-    }
+    return option_string_concat(/* :: */[
+                opseq_handler(opseq[0], level + 1 | 0),
+                /* :: */[
+                  uhexp_op_translater(opseq[1]),
+                  /* :: */[
+                    type_handler(opseq[2], level + 1 | 0),
+                    /* [] */0
+                  ]
+                ]
+              ]);
   } else {
-    var match$2 = type_handler(opseq[0], level + 1 | 0);
-    var match$3 = type_handler(opseq[2], level + 1 | 0);
-    if (match$2 !== undefined && match$3 !== undefined) {
-      return match$2 + (" " + (uhexp_op_translater(opseq[1]) + (" " + match$3)));
-    } else {
-      return ;
-    }
+    return option_string_concat(/* :: */[
+                type_handler(opseq[0], level + 1 | 0),
+                /* :: */[
+                  uhexp_op_translater(opseq[1]),
+                  /* :: */[
+                    type_handler(opseq[2], level + 1 | 0),
+                    /* [] */0
+                  ]
+                ]
+              ]);
   }
 }
 
 function case_handler(block, rules, uhtyp, level) {
-  var match = block_handler(block, level);
-  var match$1 = rule_handler(rules, level + 1 | 0);
-  if (match !== undefined && match$1 !== undefined) {
-    var r = match$1;
-    var b = match;
-    if (uhtyp !== undefined) {
-      var match$2 = uhtyp_translater(uhtyp);
-      if (match$2 !== undefined) {
-        return "((match " + (b + (" with" + (r + (") : " + (match$2 + ")")))));
-      } else {
-        return ;
-      }
-    } else {
-      return "(match " + (b + (" with" + (r + ")")));
-    }
+  if (uhtyp !== undefined) {
+    return option_string_concat(/* :: */[
+                "((match ",
+                /* :: */[
+                  block_handler(block, level),
+                  /* :: */[
+                    " with",
+                    /* :: */[
+                      rule_handler(rules, level + 1 | 0),
+                      /* :: */[
+                        ") : ",
+                        /* :: */[
+                          uhtyp_translater(uhtyp),
+                          /* :: */[
+                            ")",
+                            /* [] */0
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]);
+  } else {
+    return option_string_concat(/* :: */[
+                "(match ",
+                /* :: */[
+                  block_handler(block, level),
+                  /* :: */[
+                    " with",
+                    /* :: */[
+                      rule_handler(rules, level + 1 | 0),
+                      /* :: */[
+                        ")",
+                        /* [] */0
+                      ]
+                    ]
+                  ]
+                ]
+              ]);
   }
-  
 }
 
 function rule_handler(rules, level) {
   if (rules) {
     var rule = rules[0];
-    var match = rule_handler(rules[1], level);
-    if (match !== undefined) {
-      var match$1 = uhpat_translater(rule[0]);
-      var match$2 = block_handler(rule[1], level + 1 | 0);
-      if (match$1 !== undefined && match$2 !== undefined) {
-        return "\n" + (indent_space(level) + ("| " + (match$1 + (" -> " + (match$2 + match)))));
-      } else {
-        return ;
-      }
-    } else {
-      return ;
-    }
+    return option_string_concat(/* :: */[
+                "\n",
+                /* :: */[
+                  indent_space(level),
+                  /* :: */[
+                    "| ",
+                    /* :: */[
+                      uhpat_translater(rule[0]),
+                      /* :: */[
+                        " -> ",
+                        /* :: */[
+                          block_handler(rule[1], level + 1 | 0),
+                          /* :: */[
+                            rule_handler(rules[1], level),
+                            /* [] */0
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]);
   } else {
     return "";
   }
@@ -449,13 +465,13 @@ function rule_handler(rules, level) {
 
 function lines_handler(lines, level) {
   if (lines) {
-    var match = line_handler(lines[0], level);
-    var match$1 = lines_handler(lines[1], level);
-    if (match !== undefined && match$1 !== undefined) {
-      return match + match$1;
-    } else {
-      return ;
-    }
+    return option_string_concat(/* :: */[
+                line_handler(lines[0], level),
+                /* :: */[
+                  lines_handler(lines[1], level),
+                  /* [] */0
+                ]
+              ]);
   } else {
     return "";
   }
@@ -532,7 +548,7 @@ function line_handler(line, level) {
 function extraction_call(block) {
   var match = block_handler(block, 0);
   if (match !== undefined) {
-    return match;
+    return match + ";;";
   } else {
     return "There could be some error in the code. Most possible is incomplete holes.";
   }
