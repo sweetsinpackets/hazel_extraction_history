@@ -12,7 +12,9 @@
 //    For example call lambda, the expression part will return a type,
 //    and check with where call lambda, to create annotated
 
-// 1. return a option string -> (type, option string) pair, using fst and snd
+// now TODO: 1. return a option(string) -> (type, option string) pair, using fst and snd
+//        -- need to pass down the type, such as "let x = 3 in x" the last x
+//            maybe need pass variable set to do that
 // 2. check type everywhere
 // 3. the type pass will fit with UHTYP (type) and UHEXP (expressions)
 
@@ -52,34 +54,36 @@ let uhexp_op_translater = (~op: UHExp.op): string =>
 //        lines follow a expression, which should be same level
 //        and end of a lock doesn't insert \n
 //        so indent after each line ends
-let rec block_handler = (~block: block, ~level: int): option(string) =>
+let rec block_handler = (~block: block, ~level: int, ~variable_set : variable_set_t): extract_t =>
   switch (block) {
-  | Block(lines, t) =>
+  | Block(lines, t) =>(
     option_string_concat(
-      ~strs=[lines_handler(~lines, ~level), type_handler(~t, ~level)],
-    )
+      ~strs=[fst(lines_handler(~lines, ~level, ~variable_set)), fst(exp_handler(~t, ~level, ~variable_set))]
+    ),
+    pass_concat(~types=[snd(lines_handler(~lines, ~level, ~variable_set)), snd(exp_handler(~t, ~level, ~variable_set))])
+  )
   }
 //The t part
-and type_handler = (~t: t, ~level: int): option(string) =>
+and exp_handler = (~t: t, ~level: int, ~variable_set:variable_set_t): extract_t =>
   //Not all items need the level
   //If it's a expression and no lines, no indent will apply
   switch (t) {
   // outer nodes
-  | EmptyHole(_) => None //an empty hole always means incomplete
+  | EmptyHole(_) => (None, EMPTY) //an empty hole always means incomplete
   | Var(a, b, c) =>
     switch (a, b) {
-    | (NotInHole, NotInVarHole) => Some(c)
-    | _ => None
+    | (NotInHole, NotInVarHole) => (add_var_annotation(~var=Some(c), ~set=variable_set), find_variable_set(~var=c, ~set=variable_set))
+    | _ => (None, EMPTY)
     }
   | NumLit(a, b) =>
     switch (a) {
-    | NotInHole => Some(string_of_int(b))
-    | _ => None
+    | NotInHole => (Some(string_of_int(b)), Number)
+    | _ => (None, EMPTY)
     }
   | BoolLit(a, b) =>
     switch (a) {
-    | NotInHole => Some(string_of_bool(b))
-    | _ => None
+    | NotInHole => (Some(string_of_bool(b)), Bool)
+    | _ => (None, EMPTY)
     }
   | ListNil(a) =>
     switch (a) {
@@ -165,9 +169,9 @@ and opseq_handler = (~opseq: UHExp.opseq, ~level: int): option(string) =>
   | ExpOpExp(tm1, op, tm2) =>
     option_string_concat(
       ~strs=[
-        type_handler(~t=tm1, ~level=level + 1),
+        exp_handler(~t=tm1, ~level=level + 1),
         Some(uhexp_op_translater(~op)),
-        type_handler(~t=tm2, ~level=level + 1),
+        exp_handler(~t=tm2, ~level=level + 1),
       ],
     )
   | SeqOpExp(seq, op, tm) =>
@@ -175,7 +179,7 @@ and opseq_handler = (~opseq: UHExp.opseq, ~level: int): option(string) =>
       ~strs=[
         opseq_handler(~opseq=seq, ~level=level + 1),
         Some(uhexp_op_translater(~op)),
-        type_handler(~t=tm, ~level=level + 1),
+        exp_handler(~t=tm, ~level=level + 1),
       ],
     )
   }
@@ -241,7 +245,7 @@ and rule_handler = (~rules: list(rule), ~level: int): option(string) =>
       )
     }
   }
-and lines_handler = (~lines: list(UHExp.line), ~level: int): option(string) =>
+and lines_handler = (~lines: list(UHExp.line), ~level: int, ~variable_set: variable_set_t): extract_t =>
   switch (lines) {
   | [] => Some("")
   | [line, ...rest] =>
@@ -259,7 +263,7 @@ and line_handler = (~line: UHExp.line, ~level: int): option(string) =>
   | ExpLine(t) =>
     option_string_concat(
       ~strs=[
-        type_handler(~t, ~level),
+        exp_handler(~t, ~level),
         Some("\n"),
         Some(indent_space(~level)),
       ],

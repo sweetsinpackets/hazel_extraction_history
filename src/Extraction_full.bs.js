@@ -38,13 +38,13 @@ function block_handler(block, level) {
   return Extraction_declear$Extraction.option_string_concat(/* :: */[
               lines_handler(block[0], level),
               /* :: */[
-                type_handler(block[1], level),
+                exp_handler(block[1], level),
                 /* [] */0
               ]
             ]);
 }
 
-function type_handler(t, level) {
+function exp_handler(t, level) {
   switch (t.tag | 0) {
     case /* Var */1 :
         if (t[0] || t[1]) {
@@ -166,18 +166,18 @@ function opseq_handler(opseq, level) {
                 /* :: */[
                   uhexp_op_translater(opseq[1]),
                   /* :: */[
-                    type_handler(opseq[2], level + 1 | 0),
+                    exp_handler(opseq[2], level + 1 | 0),
                     /* [] */0
                   ]
                 ]
               ]);
   } else {
     return Extraction_declear$Extraction.option_string_concat(/* :: */[
-                type_handler(opseq[0], level + 1 | 0),
+                exp_handler(opseq[0], level + 1 | 0),
                 /* :: */[
                   uhexp_op_translater(opseq[1]),
                   /* :: */[
-                    type_handler(opseq[2], level + 1 | 0),
+                    exp_handler(opseq[2], level + 1 | 0),
                     /* [] */0
                   ]
                 ]
@@ -329,7 +329,7 @@ function line_handler(line, level) {
     }
   } else {
     return Extraction_declear$Extraction.option_string_concat(/* :: */[
-                type_handler(line[0], level),
+                exp_handler(line[0], level),
                 /* :: */[
                   "\n",
                   /* :: */[
@@ -352,7 +352,7 @@ function extraction_call(block) {
 
 exports.uhexp_op_translater = uhexp_op_translater;
 exports.block_handler = block_handler;
-exports.type_handler = type_handler;
+exports.exp_handler = exp_handler;
 exports.lam_handler = lam_handler;
 exports.inj_handler = inj_handler;
 exports.opseq_handler = opseq_handler;
