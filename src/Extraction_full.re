@@ -8,172 +8,19 @@
 
 // FIXME: use autofomatter to refine ocaml code of todo4. and indent
 
+// The idea is to combine top-down and bottom-up. 
+//    For example call lambda, the expression part will return a type,
+//    and check with where call lambda, to create annotated
+
+// 1. return a option string -> (type, option string) pair, using fst and snd
+// 2. check type everywhere
+// 3. the type pass will fit with UHTYP (type) and UHEXP (expressions)
+
 open UHExp;
+open Extraction_declear;
+open Extraction_UHTyp;
+open Extraction_UHPat;
 
-// Add indent levels and pass into the handlers
-// level starts from 0, +1 means double space
-let rec indent_space = (~level: int): string =>
-  if (level > 0) {
-    "  " ++ indent_space(~level=level - 1);
-  } else {
-    "";
-  };
-
-// FIXME:TODO: use it to simplify 
-// option_string_concat([s1, Some(constant)])
-let rec option_string_concat = (~strs : list( option(string))) : option(string) =>
-  switch (strs) {
-    | [] => Some("")
-    | [a, ...rest] => switch(a, option_string_concat(~strs=rest)) {
-      | (Some(s1), Some(s2)) => Some(s1 ++ s2)
-      | _ => None
-    }
-  };
-
-//==============================
-//  UHTyp.re
-//==============================
-
-// translate type constructor into ocaml type
-//opseq is when using bi-argument operations like plus,
-//skel.t use BinOp to indicate the operation(op) and two placeholder
-//  in UHTyp, it's one the type, like Num -> Num
-//  It's like skel.t will always receive NotInHole, so ignore it
-//opseq is the operation, ExpOpExp is to do calculation,
-//  SeqOpExp is to do sequence operation, like 1+2+3
-let rec uhtyp_translater = (~t: UHTyp.t): option(string) =>
-  switch (t) {
-  | Hole => None
-  //   | Hole => Some("'a")
-  // //FIXME: Here is a version with type inference
-  // //  such as (\lambda x:?.x+1) 1 can return 2, but leave a ? hole as "Hole"
-  // //ocaml can do type inference, so just change hole to 'a
-  | Num => Some("int")
-  | Bool => Some("bool")
-  | Unit => Some("()") //written as (), actually is unit
-  | List(a) =>
-    option_string_concat(~strs=[uhtyp_translater(~t=a), Some(" list")])
-  | Parenthesized(a) =>
-    option_string_concat(
-      ~strs=[Some("("), uhtyp_translater(~t=a), Some(")")],
-    )
-  | OpSeq(skel_t, opseq) =>
-    switch (skel_t) {
-    // Since skeleton is consistant with opseq, decline skel_t
-    | BinOp(NotInHole, _, _, _) => uhtyp_opseq_translater(~opseq)
-    | _ => None
-    }
-  }
-and uhtyp_opseq_translater = (~opseq): option(string) =>
-  switch (opseq) {
-  | ExpOpExp(tm1, op, tm2) =>
-    option_string_concat(
-      ~strs=[
-        uhtyp_translater(~t=tm1),
-        Some(uhtyp_op_translater(~op)),
-        uhtyp_translater(~t=tm2),
-      ],
-    )
-  | SeqOpExp(seq, op, tm) =>
-    option_string_concat(
-      ~strs=[
-        uhtyp_opseq_translater(~opseq=seq),
-        Some(uhtyp_op_translater(~op)),
-        uhtyp_translater(~t=tm),
-      ],
-    )
-  }
-and uhtyp_op_translater = (~op: UHTyp.op): string =>
-  switch (op) {
-  | Arrow => " -> "
-  | Prod => " * " //int*int in ocaml
-  | Sum => " | "
-  };
-
-
-//==============================
-// UHPat.re
-//==============================
-
-let rec uhpat_translater = (~t: UHPat.t): option(string) =>
-  switch (t) {
-  | EmptyHole(_) => None
-  | Wild(a) =>
-    switch (a) {
-    | NotInHole => Some("_")
-    | _ => None
-    }
-  | Var(a, b, c) =>
-    switch (a, b) {
-    | (NotInHole, NotInVarHole) => Some(c)
-    | _ => None
-    }
-  | NumLit(a, b) =>
-    switch (a) {
-    | NotInHole => Some(string_of_int(b))
-    | _ => None
-    }
-  | BoolLit(a, b) =>
-    switch (a) {
-    | NotInHole => Some(string_of_bool(b))
-    | _ => None
-    }
-  | ListNil(a) =>
-    switch (a) {
-    | NotInHole => Some("[]")
-    | _ => None
-    }
-  | Parenthesized(t) =>
-    switch (uhpat_translater(~t)) {
-    | None => None
-    | Some(s) => Some("(" ++ s ++ ")")
-    }
-  //FIXME: currently we use polymorphic type ('a) for it in "Let" assignment,
-  // better to reconstruct for a type
-  // (though the inference is good for that)
-  // in Hazel, a type Num | Bool can't have value 1,
-  //   it should be type inj[L or R, Bool](1)
-  // in ocaml, sum type should be directly give value by constructor
-  //   and need a type declaration for sum type
-  // Hence change "x : (A | B) = inj[L](val)" where val:A into
-  //   "x : 'a = val" temporarily, :'a can be ignored
-  //   here we ignore 'a, because imagine assignment is legal
-  | Inj(a, _b, c) =>
-    switch (a) {
-    | NotInHole => uhpat_translater(~t=c)
-    | _ => None
-    }
-  | OpSeq(skel_t, opseq) =>
-    switch (skel_t) {
-    | BinOp(NotInHole, _, _, _) => uhpat_opseq_translater(~opseq)
-    | _ => None
-    }
-  }
-and uhpat_opseq_translater = (~opseq): option(string) =>
-  switch (opseq) {
-  | ExpOpExp(tm1, op, tm2) =>
-    option_string_concat(
-      ~strs=[
-        uhpat_translater(~t=tm1),
-        Some(uhpat_op_translater(~op)),
-        uhpat_translater(~t=tm2),
-      ],
-    )
-  | SeqOpExp(seq, op, tm) =>
-    option_string_concat(
-      ~strs=[
-        uhpat_opseq_translater(~opseq=seq),
-        Some(uhpat_op_translater(~op)),
-        uhpat_translater(~t=tm),
-      ],
-    )
-  }
-and uhpat_op_translater = (~op: UHPat.op): string =>
-  switch (op) {
-  | Comma => ", "
-  | Space => " "
-  | Cons => " :: "
-  };
 
 //==============================
 //  UHExp.re

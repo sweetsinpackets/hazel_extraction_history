@@ -2,212 +2,9 @@
 'use strict';
 
 var Pervasives = require("bs-platform/lib/js/pervasives.js");
-
-function indent_space(level) {
-  if (level > 0) {
-    return "  " + indent_space(level - 1 | 0);
-  } else {
-    return "";
-  }
-}
-
-function option_string_concat(strs) {
-  if (strs) {
-    var a = strs[0];
-    var match = option_string_concat(strs[1]);
-    if (a !== undefined && match !== undefined) {
-      return a + match;
-    } else {
-      return ;
-    }
-  } else {
-    return "";
-  }
-}
-
-function uhtyp_translater(t) {
-  if (typeof t === "number") {
-    switch (t) {
-      case /* Hole */0 :
-          return ;
-      case /* Unit */1 :
-          return "()";
-      case /* Num */2 :
-          return "int";
-      case /* Bool */3 :
-          return "bool";
-      
-    }
-  } else {
-    switch (t.tag | 0) {
-      case /* Parenthesized */0 :
-          return option_string_concat(/* :: */[
-                      "(",
-                      /* :: */[
-                        uhtyp_translater(t[0]),
-                        /* :: */[
-                          ")",
-                          /* [] */0
-                        ]
-                      ]
-                    ]);
-      case /* List */1 :
-          return option_string_concat(/* :: */[
-                      uhtyp_translater(t[0]),
-                      /* :: */[
-                        " list",
-                        /* [] */0
-                      ]
-                    ]);
-      case /* OpSeq */2 :
-          var skel_t = t[0];
-          if (skel_t.tag && !skel_t[0]) {
-            return uhtyp_opseq_translater(t[1]);
-          } else {
-            return ;
-          }
-      
-    }
-  }
-}
-
-function uhtyp_opseq_translater(opseq) {
-  if (opseq.tag) {
-    return option_string_concat(/* :: */[
-                uhtyp_opseq_translater(opseq[0]),
-                /* :: */[
-                  uhtyp_op_translater(opseq[1]),
-                  /* :: */[
-                    uhtyp_translater(opseq[2]),
-                    /* [] */0
-                  ]
-                ]
-              ]);
-  } else {
-    return option_string_concat(/* :: */[
-                uhtyp_translater(opseq[0]),
-                /* :: */[
-                  uhtyp_op_translater(opseq[1]),
-                  /* :: */[
-                    uhtyp_translater(opseq[2]),
-                    /* [] */0
-                  ]
-                ]
-              ]);
-  }
-}
-
-function uhtyp_op_translater(op) {
-  switch (op) {
-    case /* Arrow */0 :
-        return " -> ";
-    case /* Prod */1 :
-        return " * ";
-    case /* Sum */2 :
-        return " | ";
-    
-  }
-}
-
-function uhpat_translater(_t) {
-  while(true) {
-    var t = _t;
-    switch (t.tag | 0) {
-      case /* EmptyHole */0 :
-          return ;
-      case /* Wild */1 :
-          if (t[0]) {
-            return ;
-          } else {
-            return "_";
-          }
-      case /* Var */2 :
-          if (t[0] || t[1]) {
-            return ;
-          } else {
-            return t[2];
-          }
-      case /* NumLit */3 :
-          if (t[0]) {
-            return ;
-          } else {
-            return String(t[1]);
-          }
-      case /* BoolLit */4 :
-          if (t[0]) {
-            return ;
-          } else {
-            return Pervasives.string_of_bool(t[1]);
-          }
-      case /* ListNil */5 :
-          if (t[0]) {
-            return ;
-          } else {
-            return "[]";
-          }
-      case /* Parenthesized */6 :
-          var match = uhpat_translater(t[0]);
-          if (match !== undefined) {
-            return "(" + (match + ")");
-          } else {
-            return ;
-          }
-      case /* OpSeq */7 :
-          var skel_t = t[0];
-          if (skel_t.tag && !skel_t[0]) {
-            return uhpat_opseq_translater(t[1]);
-          } else {
-            return ;
-          }
-      case /* Inj */8 :
-          if (t[0]) {
-            return ;
-          } else {
-            _t = t[2];
-            continue ;
-          }
-      
-    }
-  };
-}
-
-function uhpat_opseq_translater(opseq) {
-  if (opseq.tag) {
-    return option_string_concat(/* :: */[
-                uhpat_opseq_translater(opseq[0]),
-                /* :: */[
-                  uhpat_op_translater(opseq[1]),
-                  /* :: */[
-                    uhpat_translater(opseq[2]),
-                    /* [] */0
-                  ]
-                ]
-              ]);
-  } else {
-    return option_string_concat(/* :: */[
-                uhpat_translater(opseq[0]),
-                /* :: */[
-                  uhpat_op_translater(opseq[1]),
-                  /* :: */[
-                    uhpat_translater(opseq[2]),
-                    /* [] */0
-                  ]
-                ]
-              ]);
-  }
-}
-
-function uhpat_op_translater(op) {
-  switch (op) {
-    case /* Comma */0 :
-        return ", ";
-    case /* Space */1 :
-        return " ";
-    case /* Cons */2 :
-        return " :: ";
-    
-  }
-}
+var Extraction_UHPat$Extraction = require("./Extraction_UHPat.bs.js");
+var Extraction_UHTyp$Extraction = require("./Extraction_UHTyp.bs.js");
+var Extraction_declear$Extraction = require("./Extraction_declear.bs.js");
 
 function uhexp_op_translater(op) {
   switch (op) {
@@ -238,7 +35,7 @@ function uhexp_op_translater(op) {
 }
 
 function block_handler(block, level) {
-  return option_string_concat(/* :: */[
+  return Extraction_declear$Extraction.option_string_concat(/* :: */[
               lines_handler(block[0], level),
               /* :: */[
                 type_handler(block[1], level),
@@ -284,7 +81,7 @@ function type_handler(t, level) {
           return case_handler(t[1], t[2], t[3], level);
         }
     case /* Parenthesized */8 :
-        return option_string_concat(/* :: */[
+        return Extraction_declear$Extraction.option_string_concat(/* :: */[
                     "(",
                     /* :: */[
                       block_handler(t[0], level),
@@ -312,14 +109,14 @@ function lam_handler(errstatus, uhpat, uhtyp, block, level) {
   if (errstatus) {
     return ;
   } else if (uhtyp !== undefined) {
-    return option_string_concat(/* :: */[
+    return Extraction_declear$Extraction.option_string_concat(/* :: */[
                 "(fun ",
                 /* :: */[
-                  uhpat_translater(uhpat),
+                  Extraction_UHPat$Extraction.uhpat_translater(uhpat),
                   /* :: */[
                     " : ",
                     /* :: */[
-                      uhtyp_translater(uhtyp),
+                      Extraction_UHTyp$Extraction.uhtyp_translater(uhtyp),
                       /* :: */[
                         " -> ",
                         /* :: */[
@@ -335,10 +132,10 @@ function lam_handler(errstatus, uhpat, uhtyp, block, level) {
                 ]
               ]);
   } else {
-    return option_string_concat(/* :: */[
+    return Extraction_declear$Extraction.option_string_concat(/* :: */[
                 "(fun ",
                 /* :: */[
-                  uhpat_translater(uhpat),
+                  Extraction_UHPat$Extraction.uhpat_translater(uhpat),
                   /* :: */[
                     " -> ",
                     /* :: */[
@@ -364,7 +161,7 @@ function inj_handler(errstatus, block, level) {
 
 function opseq_handler(opseq, level) {
   if (opseq.tag) {
-    return option_string_concat(/* :: */[
+    return Extraction_declear$Extraction.option_string_concat(/* :: */[
                 opseq_handler(opseq[0], level + 1 | 0),
                 /* :: */[
                   uhexp_op_translater(opseq[1]),
@@ -375,7 +172,7 @@ function opseq_handler(opseq, level) {
                 ]
               ]);
   } else {
-    return option_string_concat(/* :: */[
+    return Extraction_declear$Extraction.option_string_concat(/* :: */[
                 type_handler(opseq[0], level + 1 | 0),
                 /* :: */[
                   uhexp_op_translater(opseq[1]),
@@ -390,7 +187,7 @@ function opseq_handler(opseq, level) {
 
 function case_handler(block, rules, uhtyp, level) {
   if (uhtyp !== undefined) {
-    return option_string_concat(/* :: */[
+    return Extraction_declear$Extraction.option_string_concat(/* :: */[
                 "((match ",
                 /* :: */[
                   block_handler(block, level),
@@ -401,7 +198,7 @@ function case_handler(block, rules, uhtyp, level) {
                       /* :: */[
                         ") : ",
                         /* :: */[
-                          uhtyp_translater(uhtyp),
+                          Extraction_UHTyp$Extraction.uhtyp_translater(uhtyp),
                           /* :: */[
                             ")",
                             /* [] */0
@@ -413,7 +210,7 @@ function case_handler(block, rules, uhtyp, level) {
                 ]
               ]);
   } else {
-    return option_string_concat(/* :: */[
+    return Extraction_declear$Extraction.option_string_concat(/* :: */[
                 "(match ",
                 /* :: */[
                   block_handler(block, level),
@@ -435,14 +232,14 @@ function case_handler(block, rules, uhtyp, level) {
 function rule_handler(rules, level) {
   if (rules) {
     var rule = rules[0];
-    return option_string_concat(/* :: */[
+    return Extraction_declear$Extraction.option_string_concat(/* :: */[
                 "\n",
                 /* :: */[
-                  indent_space(level),
+                  Extraction_declear$Extraction.indent_space(level),
                   /* :: */[
                     "| ",
                     /* :: */[
-                      uhpat_translater(rule[0]),
+                      Extraction_UHPat$Extraction.uhpat_translater(rule[0]),
                       /* :: */[
                         " -> ",
                         /* :: */[
@@ -464,7 +261,7 @@ function rule_handler(rules, level) {
 
 function lines_handler(lines, level) {
   if (lines) {
-    return option_string_concat(/* :: */[
+    return Extraction_declear$Extraction.option_string_concat(/* :: */[
                 line_handler(lines[0], level),
                 /* :: */[
                   lines_handler(lines[1], level),
@@ -484,14 +281,14 @@ function line_handler(line, level) {
     var uhtyp = line[1];
     var uhpat = line[0];
     if (uhtyp !== undefined) {
-      return option_string_concat(/* :: */[
+      return Extraction_declear$Extraction.option_string_concat(/* :: */[
                   "let ",
                   /* :: */[
-                    uhpat_translater(uhpat),
+                    Extraction_UHPat$Extraction.uhpat_translater(uhpat),
                     /* :: */[
                       " : ",
                       /* :: */[
-                        uhtyp_translater(uhtyp),
+                        Extraction_UHTyp$Extraction.uhtyp_translater(uhtyp),
                         /* :: */[
                           " = ",
                           /* :: */[
@@ -499,7 +296,7 @@ function line_handler(line, level) {
                             /* :: */[
                               " in\n",
                               /* :: */[
-                                indent_space(level),
+                                Extraction_declear$Extraction.indent_space(level),
                                 /* [] */0
                               ]
                             ]
@@ -510,10 +307,10 @@ function line_handler(line, level) {
                   ]
                 ]);
     } else {
-      return option_string_concat(/* :: */[
+      return Extraction_declear$Extraction.option_string_concat(/* :: */[
                   "let ",
                   /* :: */[
-                    uhpat_translater(uhpat),
+                    Extraction_UHPat$Extraction.uhpat_translater(uhpat),
                     /* :: */[
                       " = ",
                       /* :: */[
@@ -521,7 +318,7 @@ function line_handler(line, level) {
                         /* :: */[
                           " in\n",
                           /* :: */[
-                            indent_space(level),
+                            Extraction_declear$Extraction.indent_space(level),
                             /* [] */0
                           ]
                         ]
@@ -531,12 +328,12 @@ function line_handler(line, level) {
                 ]);
     }
   } else {
-    return option_string_concat(/* :: */[
+    return Extraction_declear$Extraction.option_string_concat(/* :: */[
                 type_handler(line[0], level),
                 /* :: */[
                   "\n",
                   /* :: */[
-                    indent_space(level),
+                    Extraction_declear$Extraction.indent_space(level),
                     /* [] */0
                   ]
                 ]
@@ -553,14 +350,6 @@ function extraction_call(block) {
   }
 }
 
-exports.indent_space = indent_space;
-exports.option_string_concat = option_string_concat;
-exports.uhtyp_translater = uhtyp_translater;
-exports.uhtyp_opseq_translater = uhtyp_opseq_translater;
-exports.uhtyp_op_translater = uhtyp_op_translater;
-exports.uhpat_translater = uhpat_translater;
-exports.uhpat_opseq_translater = uhpat_opseq_translater;
-exports.uhpat_op_translater = uhpat_op_translater;
 exports.uhexp_op_translater = uhexp_op_translater;
 exports.block_handler = block_handler;
 exports.type_handler = type_handler;
