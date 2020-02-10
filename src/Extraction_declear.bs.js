@@ -54,51 +54,111 @@ function pass_eq(_type1, _type2) {
       switch (type1) {
         case /* HOLE */0 :
             if (typeof type2 === "number") {
-              return type2 === 0;
+              if (type2 !== 0) {
+                if (type2 < 4) {
+                  return false;
+                }
+                
+              } else {
+                return true;
+              }
             } else {
               return false;
             }
+            break;
         case /* Bool */1 :
             if (typeof type2 === "number") {
-              return type2 === 1;
+              if (type2 !== 1) {
+                if (type2 < 4) {
+                  return false;
+                }
+                
+              } else {
+                return true;
+              }
             } else {
               return false;
             }
+            break;
         case /* Number */2 :
             if (typeof type2 === "number") {
-              return type2 === 2;
+              if (type2 !== 2) {
+                if (type2 < 4) {
+                  return false;
+                }
+                
+              } else {
+                return true;
+              }
             } else {
               return false;
             }
+            break;
         case /* Unit */3 :
             if (typeof type2 === "number") {
-              return type2 === 3;
+              if (type2 !== 3) {
+                if (type2 < 4) {
+                  return false;
+                }
+                
+              } else {
+                return true;
+              }
             } else {
               return false;
             }
-        default:
-          return false;
+            break;
+        case /* EMPTY */4 :
+        case /* CANNOT_INFER */5 :
+            break;
+        case /* CONFLICT */6 :
+            return false;
+        
       }
     } else if (type1.tag) {
-      if (typeof type2 === "number" || !(type2.tag === /* APP */1 && pass_eq(type1[0], type2[0]))) {
-        return false;
-      } else {
+      if (typeof type2 === "number") {
+        switch (type2) {
+          case /* EMPTY */4 :
+          case /* CANNOT_INFER */5 :
+          case /* CONFLICT */6 :
+              break;
+          default:
+            return false;
+        }
+      } else if (type2.tag === /* APP */1 && pass_eq(type1[0], type2[0])) {
         _type2 = type2[1];
         _type1 = type1[1];
         continue ;
+      } else {
+        return false;
       }
-    } else if (typeof type2 === "number" || type2.tag) {
+    } else if (typeof type2 === "number") {
+      switch (type2) {
+        case /* EMPTY */4 :
+        case /* CANNOT_INFER */5 :
+        case /* CONFLICT */6 :
+            break;
+        default:
+          return false;
+      }
+    } else if (type2.tag) {
       return false;
     } else {
       _type2 = type2[0];
       _type1 = type1[0];
       continue ;
     }
+    if (typeof type2 === "number" && type2 >= 4) {
+      return type2 < 6;
+    } else {
+      return true;
+    }
   };
 }
 
 function pass_check(type1, type2) {
   var exit = 0;
+  var exit$1 = 0;
   if (typeof type1 === "number") {
     switch (type1) {
       case /* Bool */1 :
@@ -106,15 +166,16 @@ function pass_check(type1, type2) {
             switch (type2) {
               case /* Bool */1 :
                   return /* Bool */1;
-              case /* EMPTY */4 :
-              case /* CANNOT_INFER */5 :
-                  exit = 2;
-                  break;
               case /* HOLE */0 :
               case /* Number */2 :
               case /* Unit */3 :
-              case /* CONFLICT */6 :
                   return /* CONFLICT */6;
+              case /* EMPTY */4 :
+              case /* CANNOT_INFER */5 :
+                  exit$1 = 3;
+                  break;
+              case /* CONFLICT */6 :
+                  break;
               
             }
           } else {
@@ -126,15 +187,16 @@ function pass_check(type1, type2) {
             switch (type2) {
               case /* Number */2 :
                   return /* Number */2;
-              case /* EMPTY */4 :
-              case /* CANNOT_INFER */5 :
-                  exit = 2;
-                  break;
               case /* HOLE */0 :
               case /* Bool */1 :
               case /* Unit */3 :
-              case /* CONFLICT */6 :
                   return /* CONFLICT */6;
+              case /* EMPTY */4 :
+              case /* CANNOT_INFER */5 :
+                  exit$1 = 3;
+                  break;
+              case /* CONFLICT */6 :
+                  break;
               
             }
           } else {
@@ -144,17 +206,18 @@ function pass_check(type1, type2) {
       case /* Unit */3 :
           if (typeof type2 === "number") {
             switch (type2) {
+              case /* HOLE */0 :
+              case /* Bool */1 :
+              case /* Number */2 :
+                  return /* CONFLICT */6;
               case /* Unit */3 :
                   return /* Unit */3;
               case /* EMPTY */4 :
               case /* CANNOT_INFER */5 :
-                  exit = 2;
+                  exit$1 = 3;
                   break;
-              case /* HOLE */0 :
-              case /* Bool */1 :
-              case /* Number */2 :
               case /* CONFLICT */6 :
-                  return /* CONFLICT */6;
+                  break;
               
             }
           } else {
@@ -164,90 +227,95 @@ function pass_check(type1, type2) {
       case /* EMPTY */4 :
           return type2;
       default:
-        exit = 2;
+        exit$1 = 3;
     }
   } else if (type1.tag) {
+    var b1 = type1[1];
+    var a1 = type1[0];
     if (typeof type2 === "number") {
       switch (type2) {
         case /* EMPTY */4 :
         case /* CANNOT_INFER */5 :
-            exit = 2;
+            exit$1 = 3;
+            break;
+        case /* CONFLICT */6 :
             break;
         default:
           return /* CONFLICT */6;
       }
-    } else if (type2.tag === /* APP */1 && pass_eq(type1, type2)) {
-      return type1;
+    } else if (type2.tag === /* APP */1) {
+      var b2 = type2[1];
+      var a2 = type2[0];
+      var match = pass_check(a1, a2);
+      var match$1 = pass_check(b1, b2);
+      var exit$2 = 0;
+      var exit$3 = 0;
+      if (typeof match === "number" && !(match !== 4 && match < 6)) {
+        return /* CONFLICT */6;
+      } else {
+        exit$3 = 5;
+      }
+      if (exit$3 === 5) {
+        if (typeof match$1 === "number" && !(match$1 !== 4 && match$1 < 6)) {
+          return /* CONFLICT */6;
+        } else {
+          exit$2 = 4;
+        }
+      }
+      if (exit$2 === 4) {
+        return /* APP */Block.__(1, [
+                  pass_check(a1, a2),
+                  pass_check(b1, b2)
+                ]);
+      }
+      
     } else {
       return /* CONFLICT */6;
     }
   } else {
     var a = type1[0];
-    var exit$1 = 0;
-    if (typeof a === "number" && a === 5) {
-      if (typeof type2 === "number") {
-        switch (type2) {
-          case /* EMPTY */4 :
-          case /* CANNOT_INFER */5 :
-              exit = 2;
-              break;
-          default:
-            return /* CONFLICT */6;
-        }
-      } else if (type2.tag) {
-        return /* CONFLICT */6;
-      } else {
-        return /* List */Block.__(0, [type2[0]]);
+    if (typeof type2 === "number") {
+      switch (type2) {
+        case /* EMPTY */4 :
+        case /* CANNOT_INFER */5 :
+            exit$1 = 3;
+            break;
+        case /* CONFLICT */6 :
+            break;
+        default:
+          return /* CONFLICT */6;
       }
+    } else if (type2.tag) {
+      return /* CONFLICT */6;
     } else {
-      exit$1 = 3;
-    }
-    if (exit$1 === 3) {
-      if (typeof type2 === "number") {
-        switch (type2) {
-          case /* EMPTY */4 :
-          case /* CANNOT_INFER */5 :
-              exit = 2;
-              break;
-          default:
-            return /* CONFLICT */6;
-        }
-      } else if (type2.tag) {
+      var b = type2[0];
+      var match$2 = pass_check(a, b);
+      if (typeof match$2 === "number" && !(match$2 !== 4 && match$2 < 6)) {
         return /* CONFLICT */6;
       } else {
-        var b = type2[0];
-        var exit$2 = 0;
-        if (typeof b === "number" && b === 5) {
-          return /* List */Block.__(0, [a]);
-        } else {
-          exit$2 = 4;
-        }
-        if (exit$2 === 4) {
-          if (pass_eq(a, b)) {
-            return /* List */Block.__(0, [a]);
-          } else {
-            return /* CONFLICT */6;
-          }
-        }
-        
+        return /* List */Block.__(0, [pass_check(a, b)]);
       }
     }
-    
   }
-  if (exit === 2 && typeof type2 === "number" && (type2 === 5 || type2 === 4)) {
-    return type1;
+  if (exit$1 === 3) {
+    if (typeof type2 === "number" && (type2 === 5 || type2 === 4)) {
+      return type1;
+    } else {
+      exit = 2;
+    }
   }
-  if (typeof type1 === "number") {
+  if (exit === 2 && typeof type1 === "number") {
     switch (type1) {
+      case /* HOLE */0 :
+          break;
       case /* CANNOT_INFER */5 :
           return type2;
-      case /* HOLE */0 :
       case /* CONFLICT */6 :
           return /* CONFLICT */6;
       
     }
   }
-  
+  return /* CONFLICT */6;
 }
 
 function pass_concat(types) {

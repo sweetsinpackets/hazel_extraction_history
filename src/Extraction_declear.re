@@ -49,6 +49,7 @@ type pass_t =
   | APP(pass_t, pass_t) //pass_t -> pass_t
   | EMPTY           //means currently meaningless, or not something with a type
   // it seems EMPTY should be same as None, and never happens
+  // can't appear in the dependency type
   | CANNOT_INFER  //it's dependency type like list(a)
   | CONFLICT;  //can't use in ocaml(include gradual typing) or detect error
 
@@ -56,14 +57,17 @@ type extract_t = (option(string), pass_t);
 
 // Logic: if Conflict appears in any subcases, pass Conflict
 //        if CANNOT_INFER appears with some other type, use other type
-//        TODO: EMPTY case, currently like CANNOT_INFER
+//        FIXME: EMPTY case, currently like CANNOT_INFER
+//        FIXME: add Hole cases
 
-//FIXME:
-//check whether is equal
-//set CANNOT_INFER, EMPTY to equal to any
-//set CONFLICT can't equal to any
 let rec pass_eq = (~type1: pass_t, ~type2: pass_t) : bool =>
   switch (type1, type2){
+    | (CONFLICT, _) => false
+    | (_, CONFLICT) => false
+    | (CANNOT_INFER, _) => true
+    | (_, CANNOT_INFER) => true
+    | (EMPTY, _) => true
+    | (_, EMPTY) => true
     | (HOLE, HOLE) => true
     | (Unit, Unit) => true
     | (Bool, Bool) => true
@@ -74,20 +78,31 @@ let rec pass_eq = (~type1: pass_t, ~type2: pass_t) : bool =>
   };
 
 //check conflict and pass on
-let pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
+let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
   switch (type1, type2){
-    //TODO: add hole cases 
     | (EMPTY, a) => a
     | (a, EMPTY) => a 
+    | (a, CANNOT_INFER) => a
+    | (CANNOT_INFER, b) => b    
+    | (CONFLICT, _) => CONFLICT
+    | (_, CONFLICT) => CONFLICT
+    //other cases
     | (Unit, Unit) => Unit
     | (Bool, Bool) => Bool
-    | (Number, Number) => Number
-    | (List(CANNOT_INFER), List(a)) => List(a)
-    | (List(a), List(CANNOT_INFER)) => List(a)
-    | (List(a), List(b)) => (if (pass_eq(~type1=a,~type2=b)) {List(a);} else {CONFLICT;})
-    | (APP(_), APP(_)) => (if (pass_eq(~type1=type1,~type2=type2)) {type1;} else {CONFLICT;})
-    | (a, CANNOT_INFER) => a
-    | (CANNOT_INFER, b) => b
+    | (Number, Number) => Number   
+    //EMTPY don't allow to appear in dependency type 
+    | (List(a), List(b)) => switch(pass_check(~type1=a, ~type2=b)){
+      | CONFLICT => CONFLICT
+      | EMPTY => CONFLICT
+      | _ => List(pass_check(~type1=a, ~type2=b))
+    }
+    | (APP(a1, b1), APP(a2, b2)) => switch(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2)){
+      | (CONFLICT, _) => CONFLICT
+      | (_, CONFLICT) => CONFLICT
+      | (EMPTY, _) => CONFLICT
+      | (_, EMPTY) => CONFLICT
+      | _ => APP(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2))
+    }
     | _ => CONFLICT
   };
 
