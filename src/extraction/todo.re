@@ -1,5 +1,6 @@
 /* TODO:1. think carefully and implement extraction_declear
             - move tool functions into extraction_tool
+            - implement transfunction from UHTyp... to pass_t
         2. implement extraction_uhexp as top level
             - code structure
             - add varaible_set, inference, type check
