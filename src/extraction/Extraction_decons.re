@@ -7,16 +7,7 @@
 //============================
 
 // UHPat.t -> operand
-let opseq_operand_uhpat = (~t : UHPat.t) : UHPat.operand =>
-  switch(t){
-    | opseq => switch(opseq){
-      | OpSeq.OpSeq(_, b) => switch(b){
-        | S(op, _) => op
-      }
-    }
-  };
-
-let opseq_operand_uhtyp = (~t : UHTyp.t) : UHTyp.operand =>
+let uhpat_operand = (~t : UHPat.t) : UHPat.operand =>
   switch(t){
     | opseq => switch(opseq){
       | OpSeq.OpSeq(_, b) => switch(b){
@@ -26,3 +17,15 @@ let opseq_operand_uhtyp = (~t : UHTyp.t) : UHTyp.operand =>
   };
 
 
+let uhtyp_opseq_operand = (~op: UHTyp.opseq) : UHTyp.operand =>
+    switch(op) {
+        | OpSeq.OpSeq(_, b) => switch(b){
+            | S(a, _) => a
+        }
+    };
+
+
+let uhtyp_operand = (~t : UHTyp.t) : UHTyp.operand =>
+  switch(t){
+    | opseq => uhtyp_opseq_operand(~op=opseq)
+  };

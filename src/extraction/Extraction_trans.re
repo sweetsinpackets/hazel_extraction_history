@@ -29,9 +29,8 @@ let add_var_annotation = (~var:option(string), ~set:variable_set_t) : option(str
 //  UHPat
 //================================
 
-
 let rec trans_uhpat_pass = (~t:UHPat.t, ~set:variable_set_t) : pass_t => 
-    switch(opseq_operand_uhpat(~t=t)){
+    switch(uhpat_operand(~t=t)){
         | EmptyHole(_) => HOLE
         | Wild(_) => CANNOT_INFER
         | Var(_, _, s) => find_variable_set(~var=s, ~set=set)
@@ -40,4 +39,20 @@ let rec trans_uhpat_pass = (~t:UHPat.t, ~set:variable_set_t) : pass_t =>
         | ListNil(_) => List(CANNOT_INFER)
         | Parenthesized(a) => trans_uhpat_pass(~t=a, ~set=set)
         | Inj(_, _, a) => trans_uhpat_pass(~t=a, ~set=set)
+    };
+
+
+
+//===============================
+//  UHTyp
+//===============================
+
+let rec trans_uhtyp_pass = (~t:UHTyp.t) : pass_t =>
+    switch(uhtyp_operand(~t=t)){
+        | Hole => HOLE
+        | Unit => CANNOT_INFER
+        | Num => Number
+        | Bool => Bool
+        | Parenthesized(a) => trans_uhtyp_pass(~t=a)
+        | List(a) => List(trans_uhtyp_pass(~t=a))
     };

@@ -2,14 +2,17 @@
 'use strict';
 
 
-function opseq_operand_uhpat(t) {
+function uhpat_operand(t) {
   return t[1][0];
 }
 
-function opseq_operand_uhtyp(t) {
-  return t[1][0];
+function uhtyp_opseq_operand(op) {
+  return op[1][0];
 }
 
-exports.opseq_operand_uhpat = opseq_operand_uhpat;
-exports.opseq_operand_uhtyp = opseq_operand_uhtyp;
+var uhtyp_operand = uhtyp_opseq_operand;
+
+exports.uhpat_operand = uhpat_operand;
+exports.uhtyp_opseq_operand = uhtyp_opseq_operand;
+exports.uhtyp_operand = uhtyp_operand;
 /* No side effect */

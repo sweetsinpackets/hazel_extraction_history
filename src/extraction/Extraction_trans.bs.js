@@ -63,7 +63,7 @@ function add_var_annotation($$var, set) {
 function trans_uhpat_pass(_t, set) {
   while(true) {
     var t = _t;
-    var match = Extraction_decons$Extraction.opseq_operand_uhpat(t);
+    var match = Extraction_decons$Extraction.uhpat_operand(t);
     switch (match.tag | 0) {
       case /* EmptyHole */0 :
           return /* HOLE */0;
@@ -88,7 +88,33 @@ function trans_uhpat_pass(_t, set) {
   };
 }
 
+function trans_uhtyp_pass(_t) {
+  while(true) {
+    var t = _t;
+    var match = Extraction_decons$Extraction.uhtyp_operand(t);
+    if (typeof match === "number") {
+      switch (match) {
+        case /* Hole */0 :
+            return /* HOLE */0;
+        case /* Unit */1 :
+            return /* CANNOT_INFER */5;
+        case /* Num */2 :
+            return /* Number */2;
+        case /* Bool */3 :
+            return /* Bool */1;
+        
+      }
+    } else if (match.tag) {
+      return /* List */Block.__(0, [trans_uhtyp_pass(match[0])]);
+    } else {
+      _t = match[0];
+      continue ;
+    }
+  };
+}
+
 exports.pass_trans = pass_trans;
 exports.add_var_annotation = add_var_annotation;
 exports.trans_uhpat_pass = trans_uhpat_pass;
+exports.trans_uhtyp_pass = trans_uhtyp_pass;
 /* No side effect */
