@@ -19,25 +19,51 @@ function pass_trans(type1) {
       default:
         return ;
     }
-  } else if (type1.tag) {
-    return Extraction_tool$Extraction.option_string_concat(/* :: */[
-                pass_trans(type1[0]),
-                /* :: */[
-                  " -> ",
-                  /* :: */[
-                    pass_trans(type1[1]),
-                    /* [] */0
-                  ]
-                ]
-              ]);
   } else {
-    return Extraction_tool$Extraction.option_string_concat(/* :: */[
-                pass_trans(type1[0]),
-                /* :: */[
-                  " list",
-                  /* [] */0
-                ]
-              ]);
+    switch (type1.tag | 0) {
+      case /* List */0 :
+          return Extraction_tool$Extraction.option_string_concat(/* :: */[
+                      pass_trans(type1[0]),
+                      /* :: */[
+                        " list",
+                        /* [] */0
+                      ]
+                    ]);
+      case /* ARROW */1 :
+          return Extraction_tool$Extraction.option_string_concat(/* :: */[
+                      pass_trans(type1[0]),
+                      /* :: */[
+                        "->",
+                        /* :: */[
+                          pass_trans(type1[1]),
+                          /* [] */0
+                        ]
+                      ]
+                    ]);
+      case /* SUM */2 :
+          return Extraction_tool$Extraction.option_string_concat(/* :: */[
+                      pass_trans(type1[0]),
+                      /* :: */[
+                        "*",
+                        /* :: */[
+                          pass_trans(type1[1]),
+                          /* [] */0
+                        ]
+                      ]
+                    ]);
+      case /* PROD */3 :
+          return Extraction_tool$Extraction.option_string_concat(/* :: */[
+                      pass_trans(type1[0]),
+                      /* :: */[
+                        "|",
+                        /* :: */[
+                          pass_trans(type1[1]),
+                          /* [] */0
+                        ]
+                      ]
+                    ]);
+      
+    }
   }
 }
 
@@ -68,7 +94,7 @@ function trans_uhpat_pass(_t, set) {
       case /* EmptyHole */0 :
           return /* HOLE */0;
       case /* Wild */1 :
-          return /* CANNOT_INFER */5;
+          return /* UNK */5;
       case /* Var */2 :
           return Extraction_tool$Extraction.find_variable_set(match[2], set);
       case /* NumLit */3 :
@@ -76,7 +102,7 @@ function trans_uhpat_pass(_t, set) {
       case /* BoolLit */4 :
           return /* Bool */1;
       case /* ListNil */5 :
-          return /* List */Block.__(0, [/* CANNOT_INFER */5]);
+          return /* List */Block.__(0, [/* UNK */5]);
       case /* Parenthesized */6 :
           _t = match[0];
           continue ;
@@ -97,7 +123,7 @@ function trans_uhtyp_pass(_t) {
         case /* Hole */0 :
             return /* HOLE */0;
         case /* Unit */1 :
-            return /* CANNOT_INFER */5;
+            return /* UNK */5;
         case /* Num */2 :
             return /* Number */2;
         case /* Bool */3 :

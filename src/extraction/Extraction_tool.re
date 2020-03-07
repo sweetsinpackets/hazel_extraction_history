@@ -45,26 +45,31 @@ let rec pass_eq = (~type1: pass_t, ~type2: pass_t) : bool =>
   switch (type1, type2){
     | (CONFLICT, _) => false
     | (_, CONFLICT) => false
-    | (CANNOT_INFER, _) => true
-    | (_, CANNOT_INFER) => true
-    | (EMPTY, _) => true
-    | (_, EMPTY) => true
-    | (HOLE, HOLE) => true
+    | (UNK, _) => true
+    | (_, UNK) => true
+    | (EMPTY, EMPTY) => true
+    | (_, EMPTY) => false
+    | (EMPTY, _) => false
     | (Unit, Unit) => true
     | (Bool, Bool) => true
     | (Number, Number) => true
     | (List(a), List(b)) => pass_eq(~type1=a, ~type2=b)
-    | (APP(a1, b1), APP(a2, b2)) => pass_eq(~type1=a1, ~type2=a2) && pass_eq(~type1=b1, ~type2=b2)
+    | (ARROW(a1, b1), ARROW(a2, b2)) => pass_eq(~type1=a1, ~type2=a2) && pass_eq(~type1=b1, ~type2=b2)
+    | (PROD(a1, b1), PROD(a2, b2)) => pass_eq(~type1=a1, ~type2=a2) && pass_eq(~type1=b1, ~type2=b2)
+    | (SUM(a1, b1), SUM(a2, b2)) => pass_eq(~type1=a1, ~type2=a2) && pass_eq(~type1=b1, ~type2=b2)
     | _ => false
   };
 
 // use whenever need to combine two type_t into one
 let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
   switch (type1, type2){
-    | (EMPTY, a) => a
-    | (a, EMPTY) => a 
-    | (a, CANNOT_INFER) => a
-    | (CANNOT_INFER, b) => b    
+    | (EMPTY, EMPTY) => EMPTY
+    | (HOLE, _) => HOLE
+    | (_, HOLE) => HOLE
+    | (EMPTY, _) => CONFLICT
+    | (_, EMPTY) => CONFLICT
+    | (a, UNK) => a
+    | (UNK, b) => b    
     | (CONFLICT, _) => CONFLICT
     | (_, CONFLICT) => CONFLICT
     //other cases
@@ -74,27 +79,58 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
     //EMTPY don't allow to appear in dependency type 
     | (List(a), List(b)) => switch(pass_check(~type1=a, ~type2=b)){
       | CONFLICT => CONFLICT
-      | EMPTY => CONFLICT
+      | EMPTY => CONFLICT //it can't be list(not_a_type)
       | _ => List(pass_check(~type1=a, ~type2=b))
     }
-    | (APP(a1, b1), APP(a2, b2)) => switch(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2)){
+    | (ARROW(a1, b1), ARROW(a2, b2)) => switch(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2)){
       | (CONFLICT, _) => CONFLICT
       | (_, CONFLICT) => CONFLICT
       | (EMPTY, _) => CONFLICT
       | (_, EMPTY) => CONFLICT
-      | _ => APP(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2))
+      | _ => ARROW(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2))
     }
+    | (SUM(a1, b1), SUM(a2, b2)) => switch(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2)){
+      | (CONFLICT, _) => CONFLICT
+      | (_, CONFLICT) => CONFLICT
+      | (EMPTY, _) => CONFLICT  //I don't know how it can exists...
+      | (_, EMPTY) => CONFLICT
+      | _ => SUM(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2))
+    }
+    | (PROD(a1, b1), PROD(a2, b2)) => switch(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2)){
+      | (CONFLICT, _) => CONFLICT
+      | (_, CONFLICT) => CONFLICT
+      | (EMPTY, _) => CONFLICT
+      | (_, EMPTY) => CONFLICT
+      | _ => PROD(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2))
+    }    
     | _ => CONFLICT
   };
 
 // a sugar for pass check for multiconditions
 let rec pass_concat = (~types: list(pass_t)) : pass_t =>
     switch (types){
-        | [] => EMPTY
+        | [] => UNK
         | [a] => a
         | [h,...t] => pass_check(~type1=h, ~type2=pass_concat(~types=t))
     };
 
+
+//===================================
+// Extract_t
+//===================================
+
+let extract_t_combine = (~ex1 : extract_t, ~ex2 : extract_t) : extract_t =>
+  switch(ex1, ex2){
+    | ((s1, p1), (s2, p2)) => ((option_string_concat(~strs = [s1, s2])),
+                            pass_check(~type1=p1, ~type2=p2))
+  };
+
+
+let rec extract_t_concat = (~le : list(extract_t)) : extract_t =>
+  switch (le){
+    | [] => (Some(""), UNK)
+    | [h, ...t] => extract_t_combine(~ex1=h, ~ex2=extract_t_concat(~le=t))
+  };
 
 //===================================
 // Vairable Set
@@ -104,7 +140,7 @@ let rec pass_concat = (~types: list(pass_t)) : pass_t =>
 // find a variable in the set, if don't find, return EMPTY
 let rec find_variable_set = (~var:string, ~set:variable_set_t) : pass_t=>
   switch(set){
-    | [] => EMPTY
+    | [] => EMPTY //meaning None, or Not found
     | [a, ...l] => if (var == fst(a)) {snd(a);} else {find_variable_set(~var=var,~set=l);}
   };
 

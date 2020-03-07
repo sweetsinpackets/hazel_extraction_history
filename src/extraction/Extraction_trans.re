@@ -2,6 +2,8 @@ open Extraction_declear;
 open Extraction_tool;
 open Extraction_decons;
 
+// I think this file is useless now
+
 //translate to string
 let rec pass_trans = (~type1: pass_t) : option(string) =>
   switch (type1){
@@ -9,7 +11,9 @@ let rec pass_trans = (~type1: pass_t) : option(string) =>
     | Number => Some("int")
     | Unit => Some("()")
     | List(a) => option_string_concat(~strs=[pass_trans(~type1=a), Some(" list")])
-    | APP(a, b) => option_string_concat(~strs=[pass_trans(~type1=a), Some(" -> "), pass_trans(~type1=b)])
+    | ARROW(a, b) => option_string_concat(~strs=[pass_trans(~type1=a), Some("->"), pass_trans(~type1=b)])
+    | SUM(a, b) => option_string_concat(~strs=[pass_trans(~type1=a), Some("*"), pass_trans(~type1=b)])
+    | PROD(a, b) => option_string_concat(~strs=[pass_trans(~type1=a), Some("|"), pass_trans(~type1=b)])
     | EMPTY => None
     | _ => None
   };
@@ -32,11 +36,11 @@ let add_var_annotation = (~var:option(string), ~set:variable_set_t) : option(str
 let rec trans_uhpat_pass = (~t:UHPat.t, ~set:variable_set_t) : pass_t => 
     switch(uhpat_operand(~t=t)){
         | EmptyHole(_) => HOLE
-        | Wild(_) => CANNOT_INFER
+        | Wild(_) => UNK
         | Var(_, _, s) => find_variable_set(~var=s, ~set=set)
         | NumLit(_) => Number
         | BoolLit(_) => Bool
-        | ListNil(_) => List(CANNOT_INFER)
+        | ListNil(_) => List(UNK)
         | Parenthesized(a) => trans_uhpat_pass(~t=a, ~set=set)
         | Inj(_, _, a) => trans_uhpat_pass(~t=a, ~set=set)
     };
@@ -50,7 +54,7 @@ let rec trans_uhpat_pass = (~t:UHPat.t, ~set:variable_set_t) : pass_t =>
 let rec trans_uhtyp_pass = (~t:UHTyp.t) : pass_t =>
     switch(uhtyp_operand(~t=t)){
         | Hole => HOLE
-        | Unit => CANNOT_INFER
+        | Unit => UNK
         | Num => Number
         | Bool => Bool
         | Parenthesized(a) => trans_uhtyp_pass(~t=a)

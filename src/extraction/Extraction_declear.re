@@ -9,21 +9,27 @@ TODO: things in order need to be done
 
 
 type pass_t =
-    | HOLE
+    | HOLE  //hole indicates there's an incomplete hole, like conflict, will throw hole error
     | Bool
     | Number
     | Unit
     | List(pass_t)
-    | APP(pass_t, pass_t)
+    | ARROW(pass_t, pass_t)   //ARROW(a, b) = a -> b
+    | SUM(pass_t, pass_t)
+    | PROD(pass_t, pass_t)
     //| Pair(pass_t, pass_t)
-    | EMPTY //as None, or currently NO type
-    | CANNOT_INFER // dependency type like list(a)
-    | CONFLICT;     //it's an error
+    | EMPTY //as None, or not a Type
+    // I think EMPTY should never appear since everything have a type
+    | UNK // dependency type like list(a), or can trans to whatever
+    | CONFLICT;     //it's an error, only errors like gradual types
+
+//BASE CASE = (Some(""), UNK)
 
 
 // the return type of most function
 // (extracted string, the passing type)
 type extract_t = (option(string), pass_t)
+
 
 
 // the variable environment 
