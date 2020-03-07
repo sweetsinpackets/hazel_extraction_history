@@ -28,6 +28,8 @@ type pass_t =
 
 // the return type of most function
 // (extracted string, the passing type)
+// FIXME: if pass_t is CONFLICT, EMPTY, HOLE... string may not exactly be None
+//        need a further check maybe at last
 type extract_t = (option(string), pass_t)
 
 

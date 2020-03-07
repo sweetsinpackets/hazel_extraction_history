@@ -41,6 +41,7 @@ let rec indent_space = (~level: int): string =>
 //        FIXME: EMPTY case
 //        FIXME: add Hole cases
 
+// seems useless now
 let rec pass_eq = (~type1: pass_t, ~type2: pass_t) : bool =>
   switch (type1, type2){
     | (CONFLICT, _) => false
@@ -61,6 +62,7 @@ let rec pass_eq = (~type1: pass_t, ~type2: pass_t) : bool =>
   };
 
 // use whenever need to combine two type_t into one
+
 let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
   switch (type1, type2){
     | (EMPTY, EMPTY) => EMPTY
@@ -68,10 +70,10 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
     | (_, HOLE) => HOLE
     | (EMPTY, _) => CONFLICT
     | (_, EMPTY) => CONFLICT
-    | (a, UNK) => a
-    | (UNK, b) => b    
     | (CONFLICT, _) => CONFLICT
-    | (_, CONFLICT) => CONFLICT
+    | (_, CONFLICT) => CONFLICT    
+    | (_, UNK) => CONFLICT       //FIXME: since right bound
+    | (UNK, b) => b    
     //other cases
     | (Unit, Unit) => Unit
     | (Bool, Bool) => Bool
@@ -80,6 +82,7 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
     | (List(a), List(b)) => switch(pass_check(~type1=a, ~type2=b)){
       | CONFLICT => CONFLICT
       | EMPTY => CONFLICT //it can't be list(not_a_type)
+      | HOLE => HOLE
       | _ => List(pass_check(~type1=a, ~type2=b))
     }
     | (ARROW(a1, b1), ARROW(a2, b2)) => switch(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2)){
@@ -87,6 +90,8 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
       | (_, CONFLICT) => CONFLICT
       | (EMPTY, _) => CONFLICT
       | (_, EMPTY) => CONFLICT
+      | (HOLE, _) => HOLE
+      | (_, HOLE) => HOLE 
       | _ => ARROW(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2))
     }
     | (SUM(a1, b1), SUM(a2, b2)) => switch(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2)){
@@ -94,6 +99,8 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
       | (_, CONFLICT) => CONFLICT
       | (EMPTY, _) => CONFLICT  //I don't know how it can exists...
       | (_, EMPTY) => CONFLICT
+      | (HOLE, _) => HOLE
+      | (_, HOLE) => HOLE
       | _ => SUM(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2))
     }
     | (PROD(a1, b1), PROD(a2, b2)) => switch(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2)){
@@ -101,6 +108,8 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
       | (_, CONFLICT) => CONFLICT
       | (EMPTY, _) => CONFLICT
       | (_, EMPTY) => CONFLICT
+      | (HOLE, _) => HOLE
+      | (_, HOLE) => HOLE
       | _ => PROD(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2))
     }    
     | _ => CONFLICT
@@ -108,11 +117,12 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
 
 // a sugar for pass check for multiconditions
 let rec pass_concat = (~types: list(pass_t)) : pass_t =>
-    switch (types){
-        | [] => UNK
-        | [a] => a
-        | [h,...t] => pass_check(~type1=h, ~type2=pass_concat(~types=t))
-    };
+  switch (types){
+      | [] => UNK
+      | [a] => a
+      | [h,...t] => pass_check(~type1=h, ~type2=pass_concat(~types=t))
+  };
+
 
 
 //===================================
