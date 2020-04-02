@@ -102,8 +102,7 @@ function length_of_affix(param) {
 }
 
 function nth_operand(n, seq) {
-  var match = n === 0;
-  if (match) {
+  if (n === 0) {
     return seq[0];
   } else {
     return nth_operand_of_affix(n - 1 | 0, seq[1]);

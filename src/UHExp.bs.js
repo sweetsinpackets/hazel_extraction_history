@@ -54,9 +54,9 @@ function letline(p, ann, def) {
           ]);
 }
 
-function $$var($staropt$star, $staropt$star$1, x) {
-  var err = $staropt$star !== undefined ? $staropt$star : /* NotInHole */0;
-  var var_err = $staropt$star$1 !== undefined ? $staropt$star$1 : /* NotInVarHole */0;
+function $$var(errOpt, var_errOpt, x) {
+  var err = errOpt !== undefined ? errOpt : /* NotInHole */0;
+  var var_err = var_errOpt !== undefined ? var_errOpt : /* NotInVarHole */0;
   return /* Var */Block.__(1, [
             err,
             var_err,
@@ -64,24 +64,24 @@ function $$var($staropt$star, $staropt$star$1, x) {
           ]);
 }
 
-function numlit($staropt$star, n) {
-  var err = $staropt$star !== undefined ? $staropt$star : /* NotInHole */0;
+function numlit(errOpt, n) {
+  var err = errOpt !== undefined ? errOpt : /* NotInHole */0;
   return /* NumLit */Block.__(2, [
             err,
             n
           ]);
 }
 
-function boollit($staropt$star, b) {
-  var err = $staropt$star !== undefined ? $staropt$star : /* NotInHole */0;
+function boollit(errOpt, b) {
+  var err = errOpt !== undefined ? errOpt : /* NotInHole */0;
   return /* BoolLit */Block.__(3, [
             err,
             b
           ]);
 }
 
-function lam($staropt$star, p, ann, body) {
-  var err = $staropt$star !== undefined ? $staropt$star : /* NotInHole */0;
+function lam(errOpt, p, ann, body) {
+  var err = errOpt !== undefined ? errOpt : /* NotInHole */0;
   return /* Lam */Block.__(5, [
             err,
             p,
@@ -90,8 +90,8 @@ function lam($staropt$star, p, ann, body) {
           ]);
 }
 
-function $$case($staropt$star, ann, scrut, rules) {
-  var err = $staropt$star !== undefined ? $staropt$star : /* NotInHole */0;
+function $$case(errOpt, ann, scrut, rules) {
+  var err = errOpt !== undefined ? errOpt : /* NotInHole */0;
   return /* Case */Block.__(7, [
             err,
             scrut,
@@ -100,8 +100,8 @@ function $$case($staropt$star, ann, scrut, rules) {
           ]);
 }
 
-function listnil($staropt$star, param) {
-  var err = $staropt$star !== undefined ? $staropt$star : /* NotInHole */0;
+function listnil(errOpt, param) {
+  var err = errOpt !== undefined ? errOpt : /* NotInHole */0;
   return /* ListNil */Block.__(4, [err]);
 }
 

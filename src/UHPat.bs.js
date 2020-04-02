@@ -29,9 +29,9 @@ function is_Comma(param) {
   return param === 0;
 }
 
-function $$var($staropt$star, $staropt$star$1, x) {
-  var err = $staropt$star !== undefined ? $staropt$star : /* NotInHole */0;
-  var var_err = $staropt$star$1 !== undefined ? $staropt$star$1 : /* NotInVarHole */0;
+function $$var(errOpt, var_errOpt, x) {
+  var err = errOpt !== undefined ? errOpt : /* NotInHole */0;
+  var var_err = var_errOpt !== undefined ? var_errOpt : /* NotInVarHole */0;
   return /* Var */Block.__(2, [
             err,
             var_err,
@@ -39,29 +39,29 @@ function $$var($staropt$star, $staropt$star$1, x) {
           ]);
 }
 
-function wild($staropt$star, param) {
-  var err = $staropt$star !== undefined ? $staropt$star : /* NotInHole */0;
+function wild(errOpt, param) {
+  var err = errOpt !== undefined ? errOpt : /* NotInHole */0;
   return /* Wild */Block.__(1, [err]);
 }
 
-function boollit($staropt$star, b) {
-  var err = $staropt$star !== undefined ? $staropt$star : /* NotInHole */0;
+function boollit(errOpt, b) {
+  var err = errOpt !== undefined ? errOpt : /* NotInHole */0;
   return /* BoolLit */Block.__(4, [
             err,
             b
           ]);
 }
 
-function numlit($staropt$star, n) {
-  var err = $staropt$star !== undefined ? $staropt$star : /* NotInHole */0;
+function numlit(errOpt, n) {
+  var err = errOpt !== undefined ? errOpt : /* NotInHole */0;
   return /* NumLit */Block.__(3, [
             err,
             n
           ]);
 }
 
-function listnil($staropt$star, param) {
-  var err = $staropt$star !== undefined ? $staropt$star : /* NotInHole */0;
+function listnil(errOpt, param) {
+  var err = errOpt !== undefined ? errOpt : /* NotInHole */0;
   return /* ListNil */Block.__(5, [err]);
 }
 

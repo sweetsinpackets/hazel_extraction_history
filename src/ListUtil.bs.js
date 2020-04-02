@@ -12,8 +12,8 @@ function is_empty(l) {
   return List.length(l) === 0;
 }
 
-function range($staropt$star, hi) {
-  var lo = $staropt$star !== undefined ? $staropt$star : 0;
+function range(loOpt, hi) {
+  var lo = loOpt !== undefined ? loOpt : 0;
   if (lo >= hi) {
     return /* [] */0;
   } else {
@@ -24,8 +24,8 @@ function range($staropt$star, hi) {
   }
 }
 
-function sublist($staropt$star, hi, xs) {
-  var lo = $staropt$star !== undefined ? $staropt$star : 0;
+function sublist(loOpt, hi, xs) {
+  var lo = loOpt !== undefined ? loOpt : 0;
   if (lo < 0 || hi > List.length(xs)) {
     throw [
           Caml_builtin_exceptions.invalid_argument,
@@ -250,8 +250,7 @@ function elem_before(x, _xs) {
       var match = xs[1];
       if (match) {
         var y2 = match[0];
-        var match$1 = Caml_obj.caml_equal(x, y2);
-        if (match$1) {
+        if (Caml_obj.caml_equal(x, y2)) {
           return Caml_option.some(xs[0]);
         } else {
           _xs = /* :: */[
@@ -276,8 +275,7 @@ function elem_after(x, _xs) {
       var match = xs[1];
       if (match) {
         var y2 = match[0];
-        var match$1 = Caml_obj.caml_equal(x, xs[0]);
-        if (match$1) {
+        if (Caml_obj.caml_equal(x, xs[0])) {
           return Caml_option.some(y2);
         } else {
           _xs = /* :: */[
@@ -299,20 +297,19 @@ function split_at(xs, n) {
   if (xs) {
     var ys = xs[1];
     var y = xs[0];
-    var match = Caml_obj.caml_equal(y, n);
-    if (match) {
+    if (Caml_obj.caml_equal(y, n)) {
       return /* tuple */[
               /* [] */0,
               ys
             ];
     } else {
-      var match$1 = split_at(ys, n);
+      var match = split_at(ys, n);
       return /* tuple */[
               /* :: */[
                 y,
-                match$1[0]
+                match[0]
               ],
-              match$1[1]
+              match[1]
             ];
     }
   } else {
@@ -443,8 +440,7 @@ function combos3(xs, ys, zs) {
 
 function take_while(p, xs) {
   return List.rev(List.fold_left((function (rev_taken, x) {
-                    var match = Curry._1(p, x);
-                    if (match) {
+                    if (Curry._1(p, x)) {
                       return /* :: */[
                               x,
                               rev_taken
