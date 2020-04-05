@@ -93,17 +93,36 @@ and uhexp_operand_trans = (~ope: UHExp.operand, ~vs:variable_set_t) : extract_t 
             | _ => (Some(""), HOLE)
         }
         | Lam(err, uhp, uht, t) => switch(err) {
-            | NotInHole => lam_trans(~uhp=uhp, ~uht=uht, ~t=t)
+            | NotInHole => lam_trans(~uhp=uhp, ~uht=uht, ~t=t, ~vs=vs)
             | _ => (Some(""), HOLE)
         }
     }
-and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t) : extract_t => 
+//note that lambda will be the type (A->B)
+and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t, ~vs:variable_set_t) : extract_t => 
     switch(uht) {
-        //need to check whether every branch is same
-        | Some(typ) => 
 
-        //still need all same, can't support gradual type
-        | None =>
+        | Some(typ) => {
+            let v = (fst(uhpat_trans(~t=uhp, ~vs=vs)), UNK);
+            let x_t = uhtyp_trans(~t=typ);
+            let new_vs = add_variable(~v=(fst(v), snd(x_t)), ~env=vs);
+            let e_t = uhexp_trans(~t=t, ~vs=new_vs);            
+            let str = option_string_concat(~strs = [
+                Some("(fun "),
+                fst(v),
+                Some(":"),
+                fst(x_t),
+                Some(" -> "),
+                fst(e_t),
+                Some(")")
+            ]);
+            (str, ARROW(snd(x_t), snd(e_t)));
+        }
+        | None => {
+            // FIXME: how to infer the type of x from expression?
+
+        }
     }
+//for case need to check whether every branch is same
+//even don't given type still need all same, can't support gradual type
 and uhexp_const = (~ope1:UHExp.operand, ~op:UHExp.operator, ~ope2:extract_t, ~vs:variable_set_t) : extract_t =>
 {}
