@@ -100,7 +100,6 @@ and uhexp_operand_trans = (~ope: UHExp.operand, ~vs:variable_set_t) : extract_t 
 //note that lambda will be the type (A->B)
 and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t, ~vs:variable_set_t) : extract_t => 
     switch(uht) {
-
         | Some(typ) => {
             let v = (fst(uhpat_trans(~t=uhp, ~vs=vs)), UNK);
             let x_t = uhtyp_trans(~t=typ);
@@ -119,6 +118,7 @@ and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t, ~vs:variable_s
         }
         | None => {
             // FIXME: how to infer the type of x from expression?
+            // now use 'a and UNK, hoping it will CONFLICT when apply the lambda
 
         }
     }
