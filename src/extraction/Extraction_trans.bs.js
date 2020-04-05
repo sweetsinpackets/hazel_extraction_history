@@ -86,6 +86,13 @@ function add_var_annotation($$var, set) {
   
 }
 
+function var_annotate($$var, vs) {
+  return /* tuple */[
+          add_var_annotation($$var, vs),
+          Extraction_tool$Extraction.find_variable_set($$var, vs)
+        ];
+}
+
 function trans_uhpat_pass(_t, set) {
   while(true) {
     var t = _t;
@@ -141,6 +148,7 @@ function trans_uhtyp_pass(_t) {
 
 exports.pass_trans = pass_trans;
 exports.add_var_annotation = add_var_annotation;
+exports.var_annotate = var_annotate;
 exports.trans_uhpat_pass = trans_uhpat_pass;
 exports.trans_uhtyp_pass = trans_uhtyp_pass;
 /* No side effect */

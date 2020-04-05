@@ -161,8 +161,8 @@ let rec add_variable = (~v:extract_t, ~env:variable_set_t) : variable_set_t =>
     switch (fst(v)){
         | None => env
         | Some(s) => switch(env){
-            | [] => []
-            | [h,...t] => if (fst(h) == s) {[(s, snd(v)),...add_variable(~v=v, ~env=t)]} 
+            | [] => [(s, snd(v))]
+            | [h,...t] => if (fst(h) == s) {[(s, snd(v)),...t]} 
                         else {[h,...add_variable(~v=v, ~env=t)]}
         }
     };

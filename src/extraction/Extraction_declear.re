@@ -21,6 +21,8 @@ type pass_t =
     | EMPTY //as None, or not a Type
     // I think EMPTY should never appear since everything have a type
     | UNK // dependency type like list(a), or can trans to whatever
+    // Strings should be UNK type
+    // Or let expression should have UNK, meaning "not applied"
     | CONFLICT;     //it's an error, only errors like gradual types
 
 //BASE CASE = (Some(""), UNK)

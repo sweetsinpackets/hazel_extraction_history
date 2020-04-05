@@ -27,7 +27,8 @@ let add_var_annotation = (~var:option(string), ~set:variable_set_t) : option(str
     | Some(s) => option_string_concat_ignoreNone(~strs=[var, option_string_concat(~strs=[Some(":"), pass_trans(~type1=find_variable_set(~var=s, ~set=set))])])
   };
 
-
+let var_annotate = (~var:string, ~vs:variable_set_t) : extract_t =>
+  (add_var_annotation(~var=Some(var), ~set=vs), find_variable_set(~var=var, ~set=vs));
 
 //================================
 //  UHPat

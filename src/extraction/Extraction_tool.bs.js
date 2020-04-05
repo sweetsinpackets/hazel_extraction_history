@@ -663,17 +663,17 @@ function find_variable_set($$var, _set) {
 function add_variable(v, env) {
   var match = v[0];
   if (match !== undefined) {
+    var s = match;
     if (env) {
       var t = env[1];
       var h = env[0];
-      var s = match;
       if (h[0] === s) {
         return /* :: */[
                 /* tuple */[
                   s,
                   v[1]
                 ],
-                add_variable(v, t)
+                t
               ];
       } else {
         return /* :: */[
@@ -682,7 +682,13 @@ function add_variable(v, env) {
               ];
       }
     } else {
-      return /* [] */0;
+      return /* :: */[
+              /* tuple */[
+                s,
+                v[1]
+              ],
+              /* [] */0
+            ];
     }
   } else {
     return env;
