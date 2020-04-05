@@ -76,10 +76,34 @@ and uhexp_seq_trans = (~t: Seq.t('operand, 'operator), ~vs : variable_set_t) : e
 and uhexp_operand_trans = (~ope: UHExp.operand, ~vs:variable_set_t) : extract_t =>
     switch(ope) {
         | EmptyHole(_) => (Some(""), HOLE)
-        | Var(a, b, c) => switch(a, b){
-            | (NotInHole, NotInVarHole) => var_annotate(~var=c, ~vs=vs)
+        | Var(err, v_err, s) => switch(err, v_err){
+            | (NotInHole, NotInVarHole) => var_annotate(~var=s, ~vs=vs)
             | _ => (Some(""), HOLE)
         } 
-        | NumLit(a, b) => 
+        | NumLit(err, s) => switch(err){
+            | NotInHole => (Some(string_of_int(s)), Number)
+            | _ => (Some(""), HOLE)
+        }
+        | BoolLit(err, s) => switch(err){
+            | NotInHole => (Some(string_of_bool(s)), Bool)
+            | _ => (Some(""), HOLE)
+        }
+        | ListNil(err) => switch(err){
+            | NotInHole => (Some("[]"), List(UNK))
+            | _ => (Some(""), HOLE)
+        }
+        | Lam(err, uhp, uht, t) => switch(err) {
+            | NotInHole => lam_trans(~uhp=uhp, ~uht=uht, ~t=t)
+            | _ => (Some(""), HOLE)
+        }
     }
-and uhexp_const(~ope1:UHExp.operand, ~op:UHExp.operator, ~ope2:extract_t, ~vs:variable_set_t)
+and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t) : extract_t => 
+    switch(uht) {
+        //need to check whether every branch is same
+        | Some(typ) => 
+
+        //still need all same, can't support gradual type
+        | None =>
+    }
+and uhexp_const = (~ope1:UHExp.operand, ~op:UHExp.operator, ~ope2:extract_t, ~vs:variable_set_t) : extract_t =>
+{}
