@@ -105,6 +105,12 @@ and uhexp_operand_trans = (~ope: UHExp.operand, ~vs:variable_set_t) : extract_t 
             | NotInHole => case_trans(~t=t, ~rules=rules, ~uht=uht, ~vs=vs)
             | _ => (Some(""), HOLE)
         }
+        | Parenthesized(t) => extract_t_concat(~le=[
+            (Some("("), UNK),
+            uhexp_trans(~t=t, ~vs=vs),
+            (Some(")"), UNK)
+        ])
+        | ApPalette(_) => (Some("ApPalette not implemented"), CONFLICT)
     }
 //note that lambda will be the type (A->B)
 and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t, ~vs:variable_set_t) : extract_t => 
@@ -188,8 +194,24 @@ and rules_trans = (~x_t : pass_t, ~rules : UHExp.rules, ~uht:option(UHTyp.t), ~v
 //check whether matches is same type with x_t
 //note add a \n to each rule
 and rule_trans = (~x_t : pass_t, ~rule : UHExp.rule, ~vs:variable_set_t) :extract_t =>
+    switch(rule){
+        | Rule(uhp, t) => {
+            let pat = uhpat_trans(~t=uhp, ~vs=vs);
+            let typ = pass_check(~type1=snd(pat),~type2=x_t)
+            switch(typ){
+                | HOLE => (None, HOLE)
+                | CONFLICT => (Some("Pattern not match"), CONFLICT)
+                | _ => extract_t_concat(~le=[
+                    (Some(" | "), UNK),
+                    (fst(pat), UNK),
+                    (Some(" -> "), UNK),
+                    uhexp_trans(~t=t, ~vs=vs),
+                    (Some("\n"), UNK)
+                ])
+            }
+        }
+    }
+and uhexp_const = (~ope1:UHExp.operand, ~op:UHExp.operator, ~ope2:extract_t, ~vs:variable_set_t) : extract_t =>
 {
     
 }
-and uhexp_const = (~ope1:UHExp.operand, ~op:UHExp.operator, ~ope2:extract_t, ~vs:variable_set_t) : extract_t =>
-{}
