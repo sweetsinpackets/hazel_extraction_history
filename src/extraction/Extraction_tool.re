@@ -65,7 +65,6 @@ let rec pass_eq = (~type1: pass_t, ~type2: pass_t) : bool =>
 
 let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
   switch (type1, type2){
-    | (EMPTY, EMPTY) => EMPTY
     | (HOLE, _) => HOLE
     | (_, HOLE) => HOLE
     | (EMPTY, _) => CONFLICT
@@ -73,7 +72,8 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
     | (CONFLICT, _) => CONFLICT
     | (_, CONFLICT) => CONFLICT    
     | (_, UNK) => CONFLICT       //FIXME: since right bound
-    | (UNK, b) => b    
+    | (UNK, t) => t 
+    | (t, UNK) => t   //FIXME: ? not sure if add
     //other cases
     | (Unit, Unit) => Unit
     | (Bool, Bool) => Bool

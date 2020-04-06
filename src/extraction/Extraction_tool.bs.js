@@ -321,29 +321,8 @@ function pass_check(type1, type2) {
             return /* CONFLICT */6;
           }
           break;
-      case /* EMPTY */4 :
-          if (typeof type2 === "number") {
-            switch (type2) {
-              case /* Bool */1 :
-              case /* Number */2 :
-              case /* Unit */3 :
-                  break;
-              case /* EMPTY */4 :
-                  return /* EMPTY */4;
-              case /* HOLE */0 :
-              case /* UNK */5 :
-              case /* CONFLICT */6 :
-                  exit = 2;
-                  break;
-              
-            }
-          }
-          break;
-      case /* UNK */5 :
-      case /* CONFLICT */6 :
-          exit = 2;
-          break;
-      
+      default:
+        exit = 2;
     }
   } else {
     switch (type1.tag | 0) {

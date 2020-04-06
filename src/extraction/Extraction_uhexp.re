@@ -101,6 +101,10 @@ and uhexp_operand_trans = (~ope: UHExp.operand, ~vs:variable_set_t) : extract_t 
             | NotInHole => inj_trans(~side=side, ~t=t, ~vs=vs)
             | _ => (Some(""), HOLE)
         }
+        | Case(err, t, rules, uht) => switch(err){
+            | NotInHole => case_trans(~t=t, ~rules=rules, ~uht=uht, ~vs=vs)
+            | _ => (Some(""), HOLE)
+        }
     }
 //note that lambda will be the type (A->B)
 and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t, ~vs:variable_set_t) : extract_t => 
@@ -144,9 +148,48 @@ and inj_trans = (~side:InjSide.t, ~t:UHExp.t, ~vs:variable_set_t) : extract_t =>
 {
     // should accpet a sum type, and the expression is evaluated like no injection
     // the type should be injected due to side
+    let exp = uhexp_trans(~t=t, ~vs=vs);
+    switch(snd(exp)){
+        | SUM(t1, t2) => switch(side) {
+            | L => (fst(exp), t1)
+            | R => (fst(exp), t2)
+        }
+        | _ => (Some("Not a sum type"), CONFLICT)
+    }
+}
+//ocaml doesn't support gradual type, so every case should have exactly the same type
+and case_trans = (~t:UHExp.t, ~rules:UHExp.rules, ~uht:option(UHTyp.t), ~vs:variable_set_t) : extract_t =>
+{
+    let x = uhexp_trans(~t=t, ~vs=vs);
+    let r = rules_trans(~x_t=snd(x), ~rules=rules, ~uht=uht, ~vs=vs);
+    extract_t_concat(~le=[
+        (Some("((match "), UNK),
+        (fst(x), UNK),
+        (Some(" with\n"), UNK),
+        r,
+        (Some(") : "), UNK),
+        (pass_trans(~type1=snd(r)), UNK),
+        (Some(")"), UNK)
+    ]);  
+}
+//divide rules into rule_trans and check if all types are same
+and rules_trans = (~x_t : pass_t, ~rules : UHExp.rules, ~uht:option(UHTyp.t), ~vs:variable_set_t) : extract_t =>
+{
+    let ext = switch(rules){
+        | [] => (Some(""), UNK)
+        | [h] => rule_trans(~x_t=x_t, ~rule=h, ~vs=vs)
+        | [h, ...t] => extract_t_combine(~ex1=rule_trans(~x_t=x_t, ~rule=h, ~vs=vs), ~ex2=rules_trans(~x_t=x_t,~rules=t,~uht=uht,~vs=vs))
+    };
+    switch(uht) {
+        | Some(t) => extract_t_combine(~ex1=ext, ~ex2=(Some(""), snd(uhtyp_trans(~t=t))))
+        | None => ext
+    };
+}
+//check whether matches is same type with x_t
+//note add a \n to each rule
+and rule_trans = (~x_t : pass_t, ~rule : UHExp.rule, ~vs:variable_set_t) :extract_t =>
+{
     
 }
-//for case need to check whether every branch is same
-//even don't given type still need all same, can't support gradual type
 and uhexp_const = (~ope1:UHExp.operand, ~op:UHExp.operator, ~ope2:extract_t, ~vs:variable_set_t) : extract_t =>
 {}
