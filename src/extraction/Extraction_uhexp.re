@@ -96,6 +96,11 @@ and uhexp_operand_trans = (~ope: UHExp.operand, ~vs:variable_set_t) : extract_t 
             | NotInHole => lam_trans(~uhp=uhp, ~uht=uht, ~t=t, ~vs=vs)
             | _ => (Some(""), HOLE)
         }
+        // just give the result, i.e. the picked type
+        | Inj(err, side, t) => switch(err) {
+            | NotInHole => inj_trans(~side=side, ~t=t, ~vs=vs)
+            | _ => (Some(""), HOLE)
+        }
     }
 //note that lambda will be the type (A->B)
 and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t, ~vs:variable_set_t) : extract_t => 
@@ -119,9 +124,28 @@ and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t, ~vs:variable_s
         | None => {
             // FIXME: how to infer the type of x from expression?
             // now use 'a and UNK, hoping it will CONFLICT when apply the lambda
-
+            let v = (fst(uhpat_trans(~t=uhp, ~vs=vs)), UNK);
+            let x_t = (Some("'a"), UNK);
+            let new_vs = add_variable(~v=(fst(v), snd(x_t)), ~env=vs);
+            let e_t = uhexp_trans(~t=t, ~vs=new_vs);
+            let str = option_string_concat(~strs=[
+                Some("(fun "),
+                fst(v),
+                Some(":"),
+                fst(x_t),
+                Some(" -> "),
+                fst(e_t),
+                Some(")")
+            ]);
+            (str, ARROW(snd(x_t), snd(e_t)));
         }
     }
+and inj_trans = (~side:InjSide.t, ~t:UHExp.t, ~vs:variable_set_t) : extract_t =>
+{
+    // should accpet a sum type, and the expression is evaluated like no injection
+    // the type should be injected due to side
+    
+}
 //for case need to check whether every branch is same
 //even don't given type still need all same, can't support gradual type
 and uhexp_const = (~ope1:UHExp.operand, ~op:UHExp.operator, ~ope2:extract_t, ~vs:variable_set_t) : extract_t =>
