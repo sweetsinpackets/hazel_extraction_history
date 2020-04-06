@@ -71,9 +71,8 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
     | (_, EMPTY) => CONFLICT
     | (CONFLICT, _) => CONFLICT
     | (_, CONFLICT) => CONFLICT    
-    | (_, UNK) => CONFLICT       //FIXME: since right bound
+    | (t, UNK) => t       //FIXME: ? if it's right for t but not CONFLICT
     | (UNK, t) => t 
-    | (t, UNK) => t   //FIXME: ? not sure if add
     //other cases
     | (Unit, Unit) => Unit
     | (Bool, Bool) => Bool

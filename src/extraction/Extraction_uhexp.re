@@ -213,5 +213,86 @@ and rule_trans = (~x_t : pass_t, ~rule : UHExp.rule, ~vs:variable_set_t) :extrac
     }
 and uhexp_const = (~ope1:UHExp.operand, ~op:UHExp.operator, ~ope2:extract_t, ~vs:variable_set_t) : extract_t =>
 {
-    
+    let op1 = uhexp_operand_trans(~ope=ope1, ~vs=vs);
+    //TODO: maybe add annotations
+    let str = option_string_concat(~strs=[
+        fst(op1),
+        Some(UHExp.string_of_operator(op)),
+        fst(ope2)
+    ]);
+    switch(op){
+        //apply logic is same, test the function
+        | Space => (str, Extraction_uhpat.pass_apply(~t1=snd(op1), ~t2=snd(ope2)))
+        | Plus => switch(pass_check(~type1=snd(op1), ~type2=snd(ope2))){
+            | HOLE => (None, HOLE)
+            | Number => (str, Number)
+            | _ => (None, CONFLICT)
+        }
+        | Minus => switch(pass_check(~type1=snd(op1), ~type2=snd(ope2))){
+            | HOLE => (None, HOLE)
+            | Number => (str, Number)
+            | _ => (None, CONFLICT)
+        }
+        | Times => switch(pass_check(~type1=snd(op1), ~type2=snd(ope2))){
+            | HOLE => (None, HOLE)
+            | Number => (str, Number)
+            | _ => (None, CONFLICT)
+        }
+        | LessThan => switch(pass_check(~type1=snd(op1), ~type2=snd(ope2))){
+            | HOLE => (None, HOLE)
+            | Number => (str, Bool)
+            | _ => (None, CONFLICT)
+        }
+        | GreaterThan => switch(pass_check(~type1=snd(op1), ~type2=snd(ope2))){
+            | HOLE => (None, HOLE)
+            | Number => (str, Bool)
+            | _ => (None, CONFLICT)
+        }
+        | Equals => switch(pass_check(~type1=snd(op1), ~type2=snd(ope2))){
+            | HOLE => (None, HOLE)
+            | Number => (str, Bool)
+            | _ => (None, CONFLICT)
+        }
+        | Comma => switch(snd(op1), snd(ope2)) {
+            | (HOLE, _) => (None, HOLE)
+            | (_, HOLE) => (None, HOLE)
+            | (_, CONFLICT) => (None, CONFLICT)
+            | (CONFLICT, _) => (None, CONFLICT)
+            | (_, EMPTY) => (Some("Variable not found"), CONFLICT)
+            | (EMPTY, _) => (Some("Variable not found"), CONFLICT)
+            | _ => (str, PROD(snd(op1), snd(ope2)))
+        }
+        | Cons => switch(snd(op1), snd(ope2)) {
+            | (HOLE, _) => (None, HOLE)
+            | (_, HOLE) => (None, HOLE)
+            | (_, CONFLICT) => (None, CONFLICT)
+            | (CONFLICT, _) => (None, CONFLICT)
+            | (_, EMPTY) => (Some("Variable not found"), CONFLICT)
+            | (EMPTY, _) => (Some("Variable not found"), CONFLICT)
+            | (a, List(UNK)) => (str, List(a))
+            | (a, List(b)) => (str, pass_check(~type1=a, ~type2=b))
+            | _ => (Some("Cons to not a List"), CONFLICT)
+        }
+        | And => switch(pass_check(~type1=snd(op1), ~type2=snd(ope2))){
+            | HOLE => (None, HOLE)
+            | Bool => (str, Bool)
+            | _ => (None, CONFLICT)
+        }
+        | Or => switch(pass_check(~type1=snd(op1), ~type2=snd(ope2))){
+            | HOLE => (None, HOLE)
+            | Bool => (str, Bool)
+            | _ => (None, CONFLICT)
+        }
+    }
+
 }
+
+
+let extraction_call = (~t:UHExp.t) : string =>
+    switch (uhexp_trans(~t=t, ~vs=[])){
+        | (_, HOLE) => "Uncomplete holes exist"
+        | (None, CONFLICT) => "There's type unsupport in OCaml"
+        | (Some(s), CONFLICT) => s ++ "Conflict Here"
+        | (Some(s), _) => s
+        | _ => "Something's wrong..." 
+    }

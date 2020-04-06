@@ -16,3 +16,25 @@ npm run start
 
 # Editor
 If you use `vscode`, Press `Windows + Shift + B` it will build automatically
+
+# add to web
+```
+OptionsPanel.re
+```
+Find Node.div, add
+```
+          Node.button(
+            [
+              Attr.on_click(_ => {
+                Printf.printf(
+                  "%s\n%!",
+                  Function_to_call(
+                    ~block=model |> Model.zblock |> ZExp.erase_block,
+                  ),
+                );
+                Event.Ignore;
+              }),
+            ],
+            [Node.text("Extraction to Ocaml")],
+          ),
+```
