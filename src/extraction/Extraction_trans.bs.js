@@ -14,10 +14,13 @@ function pass_trans(type1) {
           return "int";
       case /* Unit */3 :
           return "()";
+      case /* UNK */5 :
+          return "'a";
+      case /* HOLE */0 :
       case /* EMPTY */4 :
+      case /* CONFLICT */6 :
           return ;
-      default:
-        return ;
+      
     }
   } else {
     switch (type1.tag | 0) {
@@ -87,10 +90,25 @@ function add_var_annotation($$var, set) {
 }
 
 function var_annotate($$var, vs) {
-  return /* tuple */[
-          add_var_annotation($$var, vs),
-          Extraction_tool$Extraction.find_variable_set($$var, vs)
-        ];
+  return Extraction_tool$Extraction.extract_t_concat(/* :: */[
+              /* tuple */[
+                "(",
+                /* UNK */5
+              ],
+              /* :: */[
+                /* tuple */[
+                  add_var_annotation($$var, vs),
+                  Extraction_tool$Extraction.find_variable_set($$var, vs)
+                ],
+                /* :: */[
+                  /* tuple */[
+                    ")",
+                    /* UNK */5
+                  ],
+                  /* [] */0
+                ]
+              ]
+            ]);
 }
 
 function trans_uhpat_pass(_t, set) {

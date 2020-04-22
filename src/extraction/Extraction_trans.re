@@ -15,6 +15,7 @@ let rec pass_trans = (~type1: pass_t) : option(string) =>
     | SUM(a, b) => option_string_concat(~strs=[pass_trans(~type1=a), Some("*"), pass_trans(~type1=b)])
     | PROD(a, b) => option_string_concat(~strs=[pass_trans(~type1=a), Some("|"), pass_trans(~type1=b)])
     | EMPTY => None
+    | UNK => Some("'a")
     | _ => None
   };
 
@@ -28,7 +29,11 @@ let add_var_annotation = (~var:option(string), ~set:variable_set_t) : option(str
   };
 
 let var_annotate = (~var:string, ~vs:variable_set_t) : extract_t =>
-  (add_var_annotation(~var=Some(var), ~set=vs), find_variable_set(~var=var, ~set=vs));
+  extract_t_concat(~le = [(Some("("), UNK),
+  (add_var_annotation(~var=Some(var), ~set=vs), find_variable_set(~var=var, ~set=vs)),
+  (Some(")"), UNK),]);
+  
+  
 
 //================================
 //  UHPat

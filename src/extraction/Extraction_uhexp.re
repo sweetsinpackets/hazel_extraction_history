@@ -4,11 +4,18 @@ open Extraction_tool;
 open Extraction_uhpat
 open Extraction_uhtyp
 
-
 // This file will extract UHExp
 
 // directly use UHExp.string_of_operator to translate the operator
 //Js.log(UHExp.string_of_operator(Space));
+
+//TODO: add a new type STR, and modify pass_check.
+
+
+// FIXME: If we encounter "?" holes, for example in Case, if we leave it empty, it isn't None, but Some(Hole) indeed
+// It means when the user see a "? hole" but don't fill it, we receive Some(Hole) in AST. But if the user doesn't see a hole, it should be None
+// Currently, we don't have None cases except for enter ":" in "let"
+// TODO: It's safe and okey to transform Hole to None only for "? holes", i.e. call Extraction_tool.hole_to_none
 
 
 // The extract_t is prepared for ExpLine
@@ -29,19 +36,22 @@ and line_trans = (~l:UHExp.line, ~vs:variable_set_t) : (extract_t, variable_set_
         //uht is option given, hence if given, don't need to inference
         | LetLine(uhp, uht, t) => {
             // snd should be EMPTY since not defined, here use p as a string
+            let uht_h2N = Extraction_tool.hole_to_none(~uht=uht);
             let p = (fst(uhpat_trans(~t=uhp, ~vs=vs)), UNK);    
             let exp = uhexp_trans(~t=t, ~vs=vs);
-            switch(uht) {
+            switch(uht_h2N) {
                 | Some(a) => {
                     let typ = uhtyp_trans(~t=a);
                     let new_vs = add_variable(~v=(fst(p), snd(typ)), ~env=vs);
                     let e = extract_t_concat(~le = [
                         (Some("let "), UNK),
+                        (Some("("), UNK),
                         p,
-                        (Some(" = "), UNK),
-                        (fst(exp), UNK),
                         (Some(":"), UNK),
                         (fst(typ), UNK),
+                        (Some(")"), UNK),
+                        (Some(" = "), UNK),
+                        (fst(exp), UNK),
                         (Some(" in "), UNK)
                     ]);
                     (e, new_vs);
@@ -51,11 +61,13 @@ and line_trans = (~l:UHExp.line, ~vs:variable_set_t) : (extract_t, variable_set_
                     let new_vs = add_variable(~v=(fst(p), snd(exp)), ~env=vs);
                     let e = extract_t_concat(~le = [
                         (Some("let "), UNK),
+                        (Some("("), UNK),
                         p,
-                        (Some(" = "), UNK),
-                        (fst(exp), UNK),
                         (Some(":"), UNK),
                         (pass_trans(~type1=snd(exp)), UNK),
+                        (Some(")"), UNK),
+                        (Some(" = "), UNK),
+                        (fst(exp), UNK),
                         (Some(" in "), UNK)
                     ]);
                     (e, new_vs);
@@ -113,8 +125,9 @@ and uhexp_operand_trans = (~ope: UHExp.operand, ~vs:variable_set_t) : extract_t 
         | ApPalette(_) => (Some("ApPalette not implemented"), CONFLICT)
     }
 //note that lambda will be the type (A->B)
-and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t, ~vs:variable_set_t) : extract_t => 
-    switch(uht) {
+and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t, ~vs:variable_set_t) : extract_t => {
+    let uht_h2N = Extraction_tool.hole_to_none(~uht=uht);
+    switch(uht_h2N) {
         | Some(typ) => {
             let v = (fst(uhpat_trans(~t=uhp, ~vs=vs)), UNK);
             let x_t = uhtyp_trans(~t=typ);
@@ -122,9 +135,11 @@ and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t, ~vs:variable_s
             let e_t = uhexp_trans(~t=t, ~vs=new_vs);            
             let str = option_string_concat(~strs = [
                 Some("(fun "),
+                Some("("),
                 fst(v),
                 Some(":"),
                 fst(x_t),
+                Some(")"),
                 Some(" -> "),
                 fst(e_t),
                 Some(")")
@@ -133,23 +148,28 @@ and lam_trans = (~uhp: UHPat.t, ~uht:option(UHTyp.t), ~t:UHExp.t, ~vs:variable_s
         }
         | None => {
             // FIXME: how to infer the type of x from expression?
-            // now use 'a and UNK, hoping it will CONFLICT when apply the lambda
+            // TODO: revise the implement to :
+            // pass a UNK of x, and infer the expression, then the expression should be infered
+            // TODO: Modify the pass check, whenever a UNK is determined, modify the variable set and return
             let v = (fst(uhpat_trans(~t=uhp, ~vs=vs)), UNK);
-            let x_t = (Some("'a"), UNK);
-            let new_vs = add_variable(~v=(fst(v), snd(x_t)), ~env=vs);
+            let new_vs = add_variable(~v=(fst(v), UNK), ~env=vs);
+            let v_t = (Some("'a"), UNK);
             let e_t = uhexp_trans(~t=t, ~vs=new_vs);
             let str = option_string_concat(~strs=[
                 Some("(fun "),
+                Some("("),
                 fst(v),
                 Some(":"),
-                fst(x_t),
+                fst(v_t),
+                Some(")"),
                 Some(" -> "),
                 fst(e_t),
                 Some(")")
             ]);
-            (str, ARROW(snd(x_t), snd(e_t)));
+            (str, ARROW(snd(v_t), snd(e_t)));
         }
     }
+}
 and inj_trans = (~side:InjSide.t, ~t:UHExp.t, ~vs:variable_set_t) : extract_t =>
 {
     // should accpet a sum type, and the expression is evaluated like no injection
@@ -166,8 +186,10 @@ and inj_trans = (~side:InjSide.t, ~t:UHExp.t, ~vs:variable_set_t) : extract_t =>
 //ocaml doesn't support gradual type, so every case should have exactly the same type
 and case_trans = (~t:UHExp.t, ~rules:UHExp.rules, ~uht:option(UHTyp.t), ~vs:variable_set_t) : extract_t =>
 {
+    let uht_h2N = Extraction_tool.hole_to_none(~uht=uht)
+
     let x = uhexp_trans(~t=t, ~vs=vs);
-    let r = rules_trans(~x_t=snd(x), ~rules=rules, ~uht=uht, ~vs=vs);
+    let r = rules_trans(~x_t=snd(x), ~rules=rules, ~uht=uht_h2N, ~vs=vs);
     extract_t_concat(~le=[
         (Some("((match "), UNK),
         (fst(x), UNK),
@@ -294,5 +316,5 @@ let extraction_call = (~t:UHExp.t) : string =>
         | (None, CONFLICT) => "There's type unsupport in OCaml"
         | (Some(s), CONFLICT) => s ++ "Conflict Here"
         | (Some(s), _) => s
-        | _ => "Something's wrong..." 
+        | _ => "Something's wrong... "  
     }

@@ -48,15 +48,15 @@ function line_trans(l, vs) {
             vs
           ];
   } else {
-    var uht = l[1];
+    var uht_h2N = Extraction_tool$Extraction.hole_to_none(l[1]);
     var p_000 = Extraction_uhpat$Extraction.uhpat_trans(l[0], vs)[0];
     var p = /* tuple */[
       p_000,
       /* UNK */5
     ];
     var exp = uhexp_trans(l[2], vs);
-    if (uht !== undefined) {
-      var typ = Extraction_uhtyp$Extraction.uhtyp_trans(uht);
+    if (uht_h2N !== undefined) {
+      var typ = Extraction_uhtyp$Extraction.uhtyp_trans(uht_h2N);
       var new_vs = Extraction_tool$Extraction.add_variable(/* tuple */[
             p_000,
             typ[1]
@@ -67,33 +67,45 @@ function line_trans(l, vs) {
               /* UNK */5
             ],
             /* :: */[
-              p,
+              /* tuple */[
+                "(",
+                /* UNK */5
+              ],
               /* :: */[
-                /* tuple */[
-                  " = ",
-                  /* UNK */5
-                ],
+                p,
                 /* :: */[
                   /* tuple */[
-                    exp[0],
+                    ":",
                     /* UNK */5
                   ],
                   /* :: */[
                     /* tuple */[
-                      ":",
+                      typ[0],
                       /* UNK */5
                     ],
                     /* :: */[
                       /* tuple */[
-                        typ[0],
+                        ")",
                         /* UNK */5
                       ],
                       /* :: */[
                         /* tuple */[
-                          " in ",
+                          " = ",
                           /* UNK */5
                         ],
-                        /* [] */0
+                        /* :: */[
+                          /* tuple */[
+                            exp[0],
+                            /* UNK */5
+                          ],
+                          /* :: */[
+                            /* tuple */[
+                              " in ",
+                              /* UNK */5
+                            ],
+                            /* [] */0
+                          ]
+                        ]
                       ]
                     ]
                   ]
@@ -116,33 +128,45 @@ function line_trans(l, vs) {
               /* UNK */5
             ],
             /* :: */[
-              p,
+              /* tuple */[
+                "(",
+                /* UNK */5
+              ],
               /* :: */[
-                /* tuple */[
-                  " = ",
-                  /* UNK */5
-                ],
+                p,
                 /* :: */[
                   /* tuple */[
-                    exp[0],
+                    ":",
                     /* UNK */5
                   ],
                   /* :: */[
                     /* tuple */[
-                      ":",
+                      Extraction_trans$Extraction.pass_trans(exp[1]),
                       /* UNK */5
                     ],
                     /* :: */[
                       /* tuple */[
-                        Extraction_trans$Extraction.pass_trans(exp[1]),
+                        ")",
                         /* UNK */5
                       ],
                       /* :: */[
                         /* tuple */[
-                          " in ",
+                          " = ",
                           /* UNK */5
                         ],
-                        /* [] */0
+                        /* :: */[
+                          /* tuple */[
+                            exp[0],
+                            /* UNK */5
+                          ],
+                          /* :: */[
+                            /* tuple */[
+                              " in ",
+                              /* UNK */5
+                            ],
+                            /* [] */0
+                          ]
+                        ]
                       ]
                     ]
                   ]
@@ -274,9 +298,10 @@ function uhexp_operand_trans(ope, vs) {
 }
 
 function lam_trans(uhp, uht, t, vs) {
-  if (uht !== undefined) {
+  var uht_h2N = Extraction_tool$Extraction.hole_to_none(uht);
+  if (uht_h2N !== undefined) {
     var v_000 = Extraction_uhpat$Extraction.uhpat_trans(uhp, vs)[0];
-    var x_t = Extraction_uhtyp$Extraction.uhtyp_trans(uht);
+    var x_t = Extraction_uhtyp$Extraction.uhtyp_trans(uht_h2N);
     var new_vs = Extraction_tool$Extraction.add_variable(/* tuple */[
           v_000,
           x_t[1]
@@ -285,18 +310,24 @@ function lam_trans(uhp, uht, t, vs) {
     var str = Extraction_tool$Extraction.option_string_concat(/* :: */[
           "(fun ",
           /* :: */[
-            v_000,
+            "(",
             /* :: */[
-              ":",
+              v_000,
               /* :: */[
-                x_t[0],
+                ":",
                 /* :: */[
-                  " -> ",
+                  x_t[0],
                   /* :: */[
-                    e_t[0],
+                    ")",
                     /* :: */[
-                      ")",
-                      /* [] */0
+                      " -> ",
+                      /* :: */[
+                        e_t[0],
+                        /* :: */[
+                          ")",
+                          /* [] */0
+                        ]
+                      ]
                     ]
                   ]
                 ]
@@ -321,18 +352,24 @@ function lam_trans(uhp, uht, t, vs) {
     var str$1 = Extraction_tool$Extraction.option_string_concat(/* :: */[
           "(fun ",
           /* :: */[
-            v_000$1,
+            "(",
             /* :: */[
-              ":",
+              v_000$1,
               /* :: */[
-                "'a",
+                ":",
                 /* :: */[
-                  " -> ",
+                  "'a",
                   /* :: */[
-                    e_t$1[0],
+                    ")",
                     /* :: */[
-                      ")",
-                      /* [] */0
+                      " -> ",
+                      /* :: */[
+                        e_t$1[0],
+                        /* :: */[
+                          ")",
+                          /* [] */0
+                        ]
+                      ]
                     ]
                   ]
                 ]
@@ -372,8 +409,9 @@ function inj_trans(side, t, vs) {
 }
 
 function case_trans(t, rules, uht, vs) {
+  var uht_h2N = Extraction_tool$Extraction.hole_to_none(uht);
   var x = uhexp_trans(t, vs);
-  var r = rules_trans(x[1], rules, uht, vs);
+  var r = rules_trans(x[1], rules, uht_h2N, vs);
   return Extraction_tool$Extraction.extract_t_concat(/* :: */[
               /* tuple */[
                 "((match ",
@@ -898,7 +936,7 @@ function extraction_call(t) {
     if (typeof match$4 === "number" && match$4 >= 6) {
       return "There's type unsupport in OCaml";
     } else {
-      return "Something's wrong...";
+      return "Something's wrong... ";
     }
   }
 }

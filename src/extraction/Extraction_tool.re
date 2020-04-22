@@ -2,6 +2,18 @@
 
 open Extraction_declear;
 
+// FIXME: A temporary solution to map Some(Hole) into None
+let hole_to_none = (~uht : option(UHTyp.t)) : option(UHTyp.t) =>
+  switch(uht){
+    | None => None
+    | Some(t) => switch(t){
+      | OpSeq(_, S(Hole, E)) => None
+      | _ => uht
+    }
+  };
+
+
+
 
 let rec option_string_concat = (~strs : list( option(string))) : option(string) =>
   switch (strs) {
@@ -70,9 +82,9 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
     | (EMPTY, _) => CONFLICT
     | (_, EMPTY) => CONFLICT
     | (CONFLICT, _) => CONFLICT
-    | (_, CONFLICT) => CONFLICT    
+    | (_, CONFLICT) => CONFLICT
+    | (UNK, t) => t     
     | (t, UNK) => t       //FIXME: ? if it's right for t but not CONFLICT
-    | (UNK, t) => t 
     //other cases
     | (Unit, Unit) => Unit
     | (Bool, Bool) => Bool
