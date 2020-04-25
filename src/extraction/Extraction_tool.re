@@ -83,8 +83,7 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
     | (_, EMPTY) => CONFLICT
     | (CONFLICT, _) => CONFLICT
     | (_, CONFLICT) => CONFLICT
-    | (UNK, t) => t     
-    | (t, UNK) => t       //FIXME: ? if it's right for t but not CONFLICT
+    
     //other cases
     | (Unit, Unit) => Unit
     | (Bool, Bool) => Bool
@@ -96,6 +95,9 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
       | HOLE => HOLE
       | _ => List(pass_check(~type1=a, ~type2=b))
     }
+    //each time ARROW, PROD, SUM is constructed, don't make sure for ARROW to be ARROW(t, ARROW(...)) if multiple ARROW exists
+    //The reason is int -> (int -> bool)->int is different to int->int->bool->int.
+    //each time we construct lambda, we add the argument
     | (ARROW(a1, b1), ARROW(a2, b2)) => switch(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2)){
       | (CONFLICT, _) => CONFLICT
       | (_, CONFLICT) => CONFLICT
@@ -105,6 +107,7 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
       | (_, HOLE) => HOLE 
       | _ => ARROW(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2))
     }
+    //don't reformat SUM and PROD for same reason
     | (SUM(a1, b1), SUM(a2, b2)) => switch(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2)){
       | (CONFLICT, _) => CONFLICT
       | (_, CONFLICT) => CONFLICT
@@ -122,7 +125,10 @@ let rec pass_check = (~type1: pass_t, ~type2: pass_t) : pass_t =>
       | (HOLE, _) => HOLE
       | (_, HOLE) => HOLE
       | _ => PROD(pass_check(~type1=a1, ~type2=a2), pass_check(~type1=b1, ~type2=b2))
-    }    
+    }   
+    //FIXME: we move UNK cases to the last, because we don't want a UNK to be transformed into ARROW, SUM, LIST, PROD
+    | (UNK, t) => t     
+    | (t, UNK) => t       //FIXME: ? if it's right for t but not CONFLICT
     | _ => CONFLICT
   };
 
