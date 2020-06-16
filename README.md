@@ -2,6 +2,8 @@
 
 This is a repo only for backup. The code is the extraction for EECS590 project, which transfer ```UHExp.t``` to ocaml.
 
+The base is hazel in old version, so maybe new environment will fail to make. Maybe prepare a new opam is great.
+
 # Unrelated old readme
 ## Basic Reason Template
 
