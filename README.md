@@ -1,23 +1,28 @@
-# Basic Reason Template
+# Note
+
+This is a repo only for backup. The code is the extraction for EECS590 project, which transfer ```UHExp.t``` to ocaml.
+
+# Unrelated old readme
+## Basic Reason Template
 
 Hello! This project allows you to quickly get started with Reason and BuckleScript. If you wanted a more sophisticated version, try the `react` template (`bsb -theme react -init .`).
 
-# Build
+## Build
 ```
 npm run build
 ```
 
-# Build + Watch
+## Build + Watch
 
 ```
 npm run start
 ```
 
 
-# Editor
+## Editor
 If you use `vscode`, Press `Windows + Shift + B` it will build automatically
 
-# add to web
+## add to web
 ```
 OptionsPanel.re
 ```
