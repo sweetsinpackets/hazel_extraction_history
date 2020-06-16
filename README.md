@@ -4,6 +4,8 @@ This is a repo only for backup. The code is the extraction for EECS590 project, 
 
 The base is hazel in old version, so maybe new environment will fail to make. Maybe prepare a new opam is great.
 
+The compiled file is copied to ```www``` folder, manually open the index. The version of hazel still supports gradual type (different output type for case).
+
 # Unrelated old readme
 ## Basic Reason Template
 
