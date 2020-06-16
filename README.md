@@ -6,6 +6,8 @@ The base is hazel in old version, so maybe new environment will fail to make. Ma
 
 The compiled file is copied to ```www``` folder, manually open the index. The version of hazel still supports gradual type (different output type for case).
 
+Note that the version has some problems. Probably lies in bad ```UNK``` pass check and ```Letline```, because a block's type is only decided by the expression line.
+
 # Unrelated old readme
 ## Basic Reason Template
 
