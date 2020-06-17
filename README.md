@@ -1,47 +1,14 @@
-# Note
+# Don't Use it!
 
-This is a repo only for backup. The code is the extraction for EECS590 project version, which transfer ```UHExp.t``` to ocaml. The work of formal definition is in the pdf file.
+Extraction from Hazel to OCaml, directly extract from ```UHExp.t```. The ```hazel-extraction``` folder stores all files necessary for Hazel, and ```extraction_history``` is the stopped rewrite structure for that.
 
-The base is hazel in old version, so maybe new environment will fail to make. Maybe prepare a new opam is great.
+The work of formal definitions of the extraction is in the pdf file.
 
-The compiled file is copied to ```www``` folder, manually open the index. The version of hazel still supports gradual type (different output type for case).
+This is a repo only for backup, which means doesn't use any more. The code is the extraction for EECS590 project version.
+
+The version of hazel still supports gradual type (different output type for case). It also means that hazel is an old version, so maybe new environment will fail to make. Maybe prepare a new opam is great.
+
+The compiled file is copied to ```www``` folder, manually open the index. 
 
 Note that the version has some problems. Probably lies in bad ```UNK``` pass check and ```Letline```, because a block's type is only decided by the expression line.
 
-# Unrelated old readme
-## Basic Reason Template
-
-Hello! This project allows you to quickly get started with Reason and BuckleScript. If you wanted a more sophisticated version, try the `react` template (`bsb -theme react -init .`).
-
-Build
-```
-npm run build
-```
-
-Build + Watch
-```
-npm run start
-```
-Editor: If you use `vscode`, Press `Windows + Shift + B` it will build automatically
-
-## Add to web
-```
-OptionsPanel.re
-```
-Find Node.div, add
-```
-          Node.button(
-            [
-              Attr.on_click(_ => {
-                Printf.printf(
-                  "%s\n%!",
-                  Extraction_uhexp.extraction_call(
-                    ~t=model |> Model.get_program |> Program.get_uhexp,
-                  ),
-                );
-                Event.Ignore;
-              }),
-            ],
-            [Node.text("Extraction to Ocaml")],
-          ),
-```
