@@ -1,6 +1,6 @@
 # Note
 
-This is a repo only for backup. The code is the extraction for EECS590 project, which transfer ```UHExp.t``` to ocaml.
+This is a repo only for backup. The code is the extraction for EECS590 project version, which transfer ```UHExp.t``` to ocaml. The work of formal definition is in the pdf file.
 
 The base is hazel in old version, so maybe new environment will fail to make. Maybe prepare a new opam is great.
 
@@ -13,22 +13,18 @@ Note that the version has some problems. Probably lies in bad ```UNK``` pass che
 
 Hello! This project allows you to quickly get started with Reason and BuckleScript. If you wanted a more sophisticated version, try the `react` template (`bsb -theme react -init .`).
 
-## Build
+Build
 ```
 npm run build
 ```
 
-## Build + Watch
-
+Build + Watch
 ```
 npm run start
 ```
+Editor: If you use `vscode`, Press `Windows + Shift + B` it will build automatically
 
-
-## Editor
-If you use `vscode`, Press `Windows + Shift + B` it will build automatically
-
-## add to web
+## Add to web
 ```
 OptionsPanel.re
 ```
